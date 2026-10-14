@@ -13,7 +13,7 @@ provider "aws" {
 resource "aws_s3_bucket" "first_bucket" {
     bucket = "day03-bucket-14102026"
     tags ={
-        Name = "day03-bucket-14102026"
+        Name = "day03-bucket-2.0"
         Environment = "dev"
     }
 }
