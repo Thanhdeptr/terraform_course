@@ -9,3 +9,9 @@ variable "aws_region" {
   description = "AWS region for resources"
   default     = "ap-southeast-1"
 }
+
+variable "enable_versioning" {
+  type        = bool
+  description = "Enable versioning for S3 buckets"
+  default     = true
+}
