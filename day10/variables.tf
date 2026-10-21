@@ -26,3 +26,8 @@ variable "aws_region" {
   description = "AWS region for resources"
   default     = "ap-southeast-1"
 }
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
