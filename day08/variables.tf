@@ -31,14 +31,14 @@ variable "availability_zones" {
 variable "s3_bucket_names" {
   type        = list(string)
   description = "List of S3 bucket names for count example"
-  default     = ["tf-day08-count-bucket-a-20251016", "tf-day08-count-bucket-b-20251016"]
+  default     = ["tf-day08-count-bucket-a-20261021", "tf-day08-count-bucket-b-20261021"]
 }
 
 # Set type - used with for_each
 variable "s3_bucket_set" {
   type        = set(string)
   description = "Set of S3 bucket names for for_each example"
-  default     = ["tf-day08-foreach-bucket-a-20251016", "tf-day08-foreach-bucket-b-20251016"]
+  default     = ["tf-day08-foreach-bucket-a-20261021", "tf-day08-foreach-bucket-b-20261021"]
 }
 
 # Map type
