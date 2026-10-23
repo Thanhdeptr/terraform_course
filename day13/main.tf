@@ -29,3 +29,14 @@ data "aws_ami" "linux2" {
     values = ["hvm"]
   }
 }
+
+resource "aws_instance" "demo" {
+  ami           = data.aws_ami.linux2.id
+  instance_type = "t2.micro"
+  subnet_id     = data.aws_subnet.shared.id
+
+  tags = {
+    Name        = "day13-ec2-demo"
+    Environment = "dev"
+  }
+}
