@@ -1,70 +1,54 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PulseFit • Nutrition Activity Tracker</title>
-  <!-- Google Fonts: Inter cho font chữ hiện đại, sắc nét -->
+  <title>Nutrition & Calorie Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app-layout">
-    <!-- Header Thể thao & Công nghệ -->
+    <!-- Header -->
     <header class="app-header">
       <div class="brand">
-        <!-- Logo Fitness Pulse SVG chuyên nghiệp -->
-        <div class="brand-logo">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-          </svg>
-        </div>
-        <div class="brand-info">
-          <h1>PulseFit <span class="badge-pro">DEV</span></h1>
-          <p>devopsminilab.site • Daily Nutrition Commit</p>
-        </div>
+        <h1 class="brand-title">PULSE NUTRITION</h1>
+        <p class="brand-sub">Daily Calorie & Protein Tracker | devopsminilab.site</p>
       </div>
       
-      <!-- Mục tiêu nhanh hiển thị dạng Pill -->
-      <div class="targets-pill">
-        <div class="target-badge">
-          <span>Target Calo</span>
-          <strong id="header-cal-goal">2000</strong> <small>kcal</small>
+      <div class="header-targets">
+        <div class="target-item">
+          <span class="target-label">Calorie Goal</span>
+          <span class="target-val"><strong id="header-cal-goal">2000</strong> kcal</span>
         </div>
         <div class="target-divider"></div>
-        <div class="target-badge">
-          <span>Target Protein</span>
-          <strong id="header-pro-goal">120</strong> <small>g</small>
+        <div class="target-item">
+          <span class="target-label">Protein Goal</span>
+          <span class="target-val"><strong id="header-pro-goal">120</strong> g</span>
         </div>
       </div>
     </header>
 
-    <!-- SECTION: BẢNG GITHUB ACTIVITY HEATMAP THEO NĂM -->
-    <section class="card heatmap-card">
+    <!-- SECTION: ANNUAL CONTRIBUTION HEATMAP -->
+    <section class="card">
       <div class="card-header">
-        <div class="card-title">
-          <span class="activity-counter" id="total-days-logged">0 days logged in the last year</span>
-        </div>
+        <span class="card-title" id="total-days-logged">0 days logged this year</span>
         <div class="heatmap-legend">
           <span>Less</span>
-          <span class="cell-demo lvl-0"></span>
-          <span class="cell-demo lvl-1"></span>
-          <span class="cell-demo lvl-2"></span>
-          <span class="cell-demo lvl-3"></span>
-          <span class="cell-demo lvl-over"></span>
+          <span class="legend-cell lvl-0"></span>
+          <span class="legend-cell lvl-1"></span>
+          <span class="legend-cell lvl-2"></span>
+          <span class="legend-cell lvl-3"></span>
+          <span class="legend-cell lvl-over"></span>
           <span>More</span>
         </div>
       </div>
 
-      <!-- Khung chứa Grid: căn chỉnh co giãn vừa màn hình không thanh cuộn -->
-      <div class="heatmap-container">
-        <!-- Hàng hiển thị các tháng -->
+      <div class="heatmap-wrapper">
         <div class="months-row" id="months-row"></div>
-        
-        <div class="heatmap-main">
-          <!-- Cột thứ trong tuần (Mon, Wed, Fri) -->
+        <div class="heatmap-body">
           <div class="weekdays-col">
             <span></span>
             <span>Mon</span>
@@ -74,100 +58,111 @@
             <span>Fri</span>
             <span></span>
           </div>
-          <!-- Lưới 52 tuần x 7 ngày -->
           <div class="heatmap-grid" id="heatmap-grid"></div>
         </div>
       </div>
     </section>
 
-    <!-- SECTION: TIẾN ĐỘ & BỮA ĂN CỦA NGÀY ĐANG CHỌN -->
-    <div class="activity-divider">
-      <div class="divider-left">
-        <span class="dot-indicator"></span>
-        <h2>Activity on <span id="viewing-date-label">Today</span></h2>
+    <!-- ACTIVE DAY OVERVIEW -->
+    <div class="section-heading">
+      <div class="heading-left">
+        <span class="status-indicator"></span>
+        <h2>Records for <span id="viewing-date-label">Today</span></h2>
       </div>
-      <button id="toggle-config-btn" class="btn-text">⚙️ Change Goals</button>
+      <button id="toggle-goals-btn" class="btn-link">Edit Targets</button>
     </div>
 
-    <!-- Khối ẩn/hiện cấu hình mục tiêu -->
-    <div class="card config-drawer" id="config-drawer" style="display: none;">
-      <div class="config-grid">
-        <div>
-          <label>Calorie Goal (kcal)</label>
-          <input type="number" id="input-cal-goal" value="2000">
+    <!-- Hidden Goals Drawer -->
+    <div class="card goals-drawer" id="goals-drawer" style="display: none;">
+      <div class="goals-grid">
+        <div class="form-group">
+          <label>Target Calories (kcal)</label>
+          <input type="number" id="input-cal-goal" value="2000" min="500">
         </div>
-        <div>
-          <label>Protein Goal (g)</label>
-          <input type="number" id="input-pro-goal" value="120">
+        <div class="form-group">
+          <label>Target Protein (g)</label>
+          <input type="number" id="input-pro-goal" value="120" min="10">
         </div>
-        <button id="save-goals-btn" class="btn btn-primary">Save Goals</button>
+        <button id="save-goals-btn" class="btn btn-primary">Save Targets</button>
       </div>
     </div>
 
-    <!-- Thanh tiến độ ngày đang chọn -->
+    <!-- PROGRESS BARS -->
     <section class="card progress-card">
-      <div class="progress-item">
-        <div class="progress-label">
-          <span>Energy Intake</span>
+      <div class="progress-row">
+        <div class="progress-info">
+          <span>Calories</span>
           <strong><span id="day-cal-count">0</span> / <span id="day-cal-target">2000</span> kcal</strong>
         </div>
         <div class="progress-track">
-          <div class="progress-fill cal-fill" id="cal-progress-bar"></div>
+          <div class="progress-fill fill-cal" id="cal-progress-bar"></div>
         </div>
       </div>
 
-      <div class="progress-item">
-        <div class="progress-label">
+      <div class="progress-row">
+        <div class="progress-info">
           <span>Protein</span>
           <strong><span id="day-pro-count">0</span> / <span id="day-pro-target">120</span> g</strong>
         </div>
         <div class="progress-track">
-          <div class="progress-fill pro-fill" id="pro-progress-bar"></div>
+          <div class="progress-fill fill-pro" id="pro-progress-bar"></div>
         </div>
       </div>
     </section>
 
-    <!-- Form Commit Bữa Ăn -->
-    <section class="card form-card">
+    <!-- ADD MEAL FORM -->
+    <section class="card">
+      <h3 class="card-subtitle">Log Meal</h3>
       <form id="meal-form">
         <div class="form-grid">
-          <div class="input-group">
-            <select id="meal-type">
-              <option value="Breakfast"> Breakfast </option>
-              <option value="Lunch"> Lunch </option>
-              <option value="Dinner"> Dinner </option>
-              <option value="Snack"> Snack </option>
-            </select>
+          <!-- CUSTOM DROPDOWN THAY THẾ CHO SELECT THƯỜNG -->
+          <div class="form-group">
+            <label>Meal Category</label>
+            <div class="custom-select-wrapper" id="custom-meal-select">
+              <input type="hidden" id="meal-type" value="Breakfast">
+              <div class="custom-select-trigger">
+                <span id="selected-meal-label">Breakfast</span>
+                <span class="dropdown-chevron"></span>
+              </div>
+              <div class="custom-options">
+                <div class="custom-option selected" data-value="Breakfast">Breakfast</div>
+                <div class="custom-option" data-value="Lunch">Lunch</div>
+                <div class="custom-option" data-value="Dinner">Dinner</div>
+                <div class="custom-option" data-value="Snack">Snack</div>
+              </div>
+            </div>
           </div>
-          <div class="input-group span-2">
-            <input type="text" id="meal-name" placeholder="Meal_name (e.g: 200g chicken...)" required>
+
+          <div class="form-group span-2">
+            <label>Food Description</label>
+            <input type="text" id="meal-name" placeholder="e.g. Grilled Chicken Salad" required>
           </div>
-          <div class="input-group">
-            <input type="number" id="meal-cal" placeholder="Kcal" min="0" required>
+          <div class="form-group">
+            <label>Calories (kcal)</label>
+            <input type="number" id="meal-cal" placeholder="0" min="0" required>
           </div>
-          <div class="input-group">
-            <input type="number" id="meal-pro" placeholder="Protein (g)" min="0" step="0.1" required>
+          <div class="form-group">
+            <label>Protein (g)</label>
+            <input type="number" id="meal-pro" placeholder="0" min="0" step="0.1" required>
           </div>
-          <div class="input-group">
-            <button type="submit" class="btn btn-emerald">Commit Meal</button>
+          <div class="form-group btn-align">
+            <button type="submit" class="btn btn-primary">Add Entry</button>
           </div>
         </div>
       </form>
     </section>
 
-    <!-- Lịch sử món ăn trong ngày -->
-    <section class="card list-card">
-      <div class="list-header">
-        <h3>Logged Meals</h3>
-        <button id="reset-day-btn" class="btn-danger-text">Clear This Day</button>
+    <!-- MEAL HISTORY LIST -->
+    <section class="card">
+      <div class="card-header">
+        <h3 class="card-subtitle">Meal History</h3>
+        <button id="reset-day-btn" class="btn-danger-link">Clear Day</button>
       </div>
       <ul class="meal-list" id="meal-list"></ul>
     </section>
   </div>
 
-  <!-- Tooltip động khi hover vào các ô -->
   <div id="grid-tooltip" class="grid-tooltip"></div>
-
   <script src="script.js"></script>
 </body>
 </html>

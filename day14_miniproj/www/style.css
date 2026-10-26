@@ -1,28 +1,28 @@
 /* ==========================================================
-   THEME: GITHUB DARK + FITNESS TECH PALETTE
+   COLOR SYSTEM: PANTONE FRESH WELLNESS PALETTE
    ========================================================== */
    :root {
-    --bg-app: #090d16;          /* Nền chính sâu thẳm, dịu mắt */
-    --bg-card: #111726;         /* Nền thẻ nội dung */
-    --bg-card-hover: #151d30;
-    --border: #1f293d;          /* Đường viền mỏng tinh tế */
-    --border-focus: #388bfd;
+    --bg-app: #f4f7f2;         /* Light sage mist background */
+    --bg-card: #ffffff;        /* Pure crisp card container */
+    --border-light: #dde6db;   /* Soft organic border */
+    --border-input: #cfdbcb;
     
-    --text-main: #f0f6fc;       /* Trắng ngà dễ đọc */
-    --text-muted: #8b949e;      /* Chữ mờ phụ trợ */
-    --text-dim: #484f58;
+    --forest-dark: #1b3b36;    /* PANTONE 567 C */
+    --sage-pale: #e7efe3;      /* Soft accent fills */
+    --green-light: #b8d59d;    /* PANTONE 578 C */
+    --green-deep: #4a7c36;     /* PANTONE 364 C */
+    --warning-amber: #c87a22;
   
-    /* Cấp độ xanh GitHub Emerald cho Heatmap */
-    --lvl-0: #161f30;           /* Ô rỗng chưa nạp */
-    --lvl-1: #0e4429;           /* 1% - 49% */
-    --lvl-2: #006d32;           /* 50% - 79% */
-    --lvl-3: #26a641;           /* 80% - 105% (Chuẩn bài) */
-    --lvl-over: #e3b341;        /* Vượt mức calo (màu hổ phách) */
+    --text-primary: #1b3b36;
+    --text-muted: #647b74;
+    --text-dim: #94a7a0;
   
-    --color-emerald: #238636;
-    --color-emerald-hover: #2ea043;
-    --color-blue: #388bfd;
-    --color-danger: #f85149;
+    /* Heatmap Color Steps */
+    --hm-lvl-0: #e8eee6;
+    --hm-lvl-1: #cce3be;
+    --hm-lvl-2: #9ec987;
+    --hm-lvl-3: #4a7c36;
+    --hm-lvl-over: #c87a22;
   }
   
   * {
@@ -32,10 +32,10 @@
   }
   
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--bg-app);
-    color: var(--text-main);
-    padding: 24px 16px;
+    color: var(--text-primary);
+    padding: 28px 16px;
     display: flex;
     justify-content: center;
     min-height: 100vh;
@@ -43,7 +43,7 @@
   
   .app-layout {
     width: 100%;
-    max-width: 790px; /* Khung chuẩn không bao giờ bị thanh cuộn ngang */
+    max-width: 790px;
   }
   
   /* ================= HEADER ================= */
@@ -51,90 +51,73 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
   }
   
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .brand-logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #1f6feb 0%, #238636 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(35, 134, 54, 0.25);
-  }
-  
-  .brand-info h1 {
-    font-size: 19px;
+  .brand-title {
+    font-size: 18px;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    letter-spacing: 0.04em;
+    color: var(--forest-dark);
   }
   
-  .badge-pro {
-    font-size: 10px;
-    font-weight: 700;
-    background: rgba(56, 139, 253, 0.15);
-    color: var(--color-blue);
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid rgba(56, 139, 253, 0.3);
-  }
-  
-  .brand-info p {
+  .brand-sub {
     font-size: 12px;
     color: var(--text-muted);
+    margin-top: 2px;
   }
   
-  .targets-pill {
+  .header-targets {
     display: flex;
     align-items: center;
     background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 99px;
-    gap: 12px;
+    border: 1px solid var(--border-light);
+    padding: 8px 16px;
+    border-radius: 8px;
+    gap: 14px;
   }
   
-  .target-badge {
-    font-size: 11px;
+  .target-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .target-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--text-muted);
+    font-weight: 600;
   }
   
-  .target-badge strong {
+  .target-val {
     font-size: 13px;
-    color: var(--text-main);
+    color: var(--text-primary);
+  }
+  
+  .target-val strong {
+    font-size: 15px;
+    color: var(--forest-dark);
   }
   
   .target-divider {
     width: 1px;
-    height: 16px;
-    background-color: var(--border);
+    height: 24px;
+    background-color: var(--border-light);
   }
   
-  /* ================= CARDS CHUNG ================= */
+  /* ================= CARDS ================= */
   .card {
     background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 14px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(27, 59, 54, 0.03);
   }
   
-  /* ================= HEATMAP SECTION ================= */
   .card-header {
     display: flex;
     justify-content: space-between;
@@ -142,11 +125,22 @@
     margin-bottom: 12px;
   }
   
-  .activity-counter {
-    font-size: 14px;
+  .card-title {
+    font-size: 13px;
     font-weight: 600;
+    color: var(--forest-dark);
   }
   
+  .card-subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  
+  /* ================= HEATMAP ================= */
   .heatmap-legend {
     display: flex;
     align-items: center;
@@ -155,36 +149,34 @@
     color: var(--text-muted);
   }
   
-  .cell-demo {
+  .legend-cell {
     width: 10px;
     height: 10px;
     border-radius: 2px;
-    display: inline-block;
   }
   
-  .heatmap-container {
+  .heatmap-wrapper {
     width: 100%;
   }
   
-  /* Hàng hiển thị tháng */
   .months-row {
     display: grid;
     grid-template-columns: repeat(52, 1fr);
     font-size: 10px;
     color: var(--text-muted);
     height: 16px;
-    margin-left: 28px; /* Khớp với độ rộng weekdays-col */
-    margin-bottom: 4px;
+    margin-left: 28px;
+    margin-bottom: 6px;
     position: relative;
   }
   
   .month-label-item {
     position: absolute;
-    transform: translateX(0);
     white-space: nowrap;
+    font-weight: 500;
   }
   
-  .heatmap-main {
+  .heatmap-body {
     display: flex;
     gap: 6px;
   }
@@ -198,9 +190,9 @@
     width: 22px;
     line-height: 10px;
     text-align: right;
+    font-weight: 500;
   }
   
-  /* Lưới 52 tuần x 7 ngày tự động co vừa màn hình */
   .heatmap-grid {
     display: grid;
     grid-template-rows: repeat(7, 10px);
@@ -215,143 +207,259 @@
     height: 10px;
     border-radius: 2px;
     cursor: pointer;
-    transition: transform 0.1s ease;
+    transition: transform 0.1s ease, border-color 0.1s ease;
   }
   
   .day-cell:hover {
     transform: scale(1.3);
-    outline: 1.5px solid var(--color-blue);
+    outline: 1.5px solid var(--forest-dark);
     z-index: 5;
   }
   
   .day-cell.active-selected {
-    outline: 2px solid #fff !important;
+    outline: 2px solid var(--forest-dark) !important;
     transform: scale(1.2);
     z-index: 6;
   }
   
-  /* Các level màu của ô */
-  .lvl-0 { background-color: var(--lvl-0); }
-  .lvl-1 { background-color: var(--lvl-1); }
-  .lvl-2 { background-color: var(--lvl-2); }
-  .lvl-3 { background-color: var(--lvl-3); }
-  .lvl-over { background-color: var(--lvl-over); }
+  /* Heatmap levels */
+  .lvl-0 { background-color: var(--hm-lvl-0); }
+  .lvl-1 { background-color: var(--hm-lvl-1); }
+  .lvl-2 { background-color: var(--hm-lvl-2); }
+  .lvl-3 { background-color: var(--hm-lvl-3); }
+  .lvl-over { background-color: var(--hm-lvl-over); }
   
-  /* ================= SECTION TIẾN ĐỘ & VIEW ================= */
-  .activity-divider {
+  /* ================= SECTION HEADINGS ================= */
+  .section-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 16px 0 10px 0;
+    margin: 18px 0 10px 0;
   }
   
-  .divider-left {
+  .heading-left {
     display: flex;
     align-items: center;
     gap: 8px;
   }
   
-  .dot-indicator {
+  .status-indicator {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: var(--color-emerald);
-    box-shadow: 0 0 8px var(--color-emerald);
+    background-color: var(--green-deep);
   }
   
-  .activity-divider h2 {
-    font-size: 15px;
-    font-weight: 600;
+  .section-heading h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--forest-dark);
   }
   
-  .btn-text {
+  .btn-link {
     background: none;
     border: none;
-    color: var(--color-blue);
+    color: var(--forest-dark);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    text-decoration: underline;
     cursor: pointer;
   }
   
-  .config-drawer {
-    background-color: #0d121c;
+  /* ================= FORMS & INPUTS ================= */
+  .goals-drawer {
+    background-color: #f8faf6;
   }
   
-  .config-grid {
+  .goals-grid {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: flex-end;
   }
   
-  .config-grid label {
-    font-size: 11px;
-    color: var(--text-muted);
-    display: block;
-    margin-bottom: 4px;
+  .form-group {
+    display: flex;
+    flex-direction: column;
   }
   
-  /* Form inputs & select */
-  input, select {
+  .form-group label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  
+  input {
     width: 100%;
-    padding: 8px 10px;
-    background-color: #0a0d14;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-main);
+    padding: 9px 12px;
+    background-color: #ffffff;
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    color: var(--text-primary);
     font-size: 13px;
     outline: none;
     font-family: inherit;
-    transition: border-color 0.15s ease;
+    transition: all 0.2s ease;
   }
   
-  input:focus, select:focus {
-    border-color: var(--border-focus);
+  input:focus {
+    border-color: var(--forest-dark);
+    box-shadow: 0 0 0 3px rgba(27, 59, 54, 0.08);
   }
   
-  .btn {
-    padding: 8px 14px;
-    border-radius: 6px;
+  /* ================= CUSTOM DROPDOWN SELECT ================= */
+  .custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 100%;
+  }
+  
+  .custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    background-color: #ffffff;
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    color: var(--forest-dark);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .custom-select-trigger:hover {
+    background-color: var(--sage-pale);
+    border-color: var(--green-light);
+  }
+  
+  .custom-select-wrapper.open .custom-select-trigger {
+    border-color: var(--forest-dark);
+    box-shadow: 0 0 0 3px rgba(27, 59, 54, 0.08);
+  }
+  
+  /* Mũi tên chevron tối giản */
+  .dropdown-chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--forest-dark);
+    border-bottom: 2px solid var(--forest-dark);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+    margin-right: 2px;
+  }
+  
+  .custom-select-wrapper.open .dropdown-chevron {
+    transform: rotate(-135deg);
+  }
+  
+  /* Menu pop-up bo góc mềm mại */
+  .custom-options {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(27, 59, 54, 0.12);
+    display: none;
+    z-index: 50;
+    overflow: hidden;
+    padding: 5px;
+  }
+  
+  .custom-select-wrapper.open .custom-options {
+    display: block;
+  }
+  
+  /* Các lựa chọn bên trong: loại bỏ hoàn toàn màu xanh dương */
+  .custom-option {
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  
+  .custom-option:hover {
+    background-color: var(--sage-pale);
+    color: var(--forest-dark);
+  }
+  
+  .custom-option.selected {
+    background-color: var(--forest-dark);
+    color: #ffffff;
+    font-weight: 600;
+  }
+  
+  /* ================= BUTTONS ================= */
+  .btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
     border: none;
-    transition: 0.15s ease;
+    transition: background-color 0.15s ease;
     white-space: nowrap;
   }
   
-  .btn-emerald {
-    background-color: var(--color-emerald);
-    color: #fff;
+  .btn-primary {
+    background-color: var(--forest-dark);
+    color: #ffffff;
     width: 100%;
   }
-  .btn-emerald:hover { background-color: var(--color-emerald-hover); }
   
-  .btn-primary {
-    background-color: var(--color-blue);
-    color: #fff;
+  .btn-primary:hover {
+    background-color: #27524b;
   }
   
-  /* Progress bars */
-  .progress-item {
-    margin-bottom: 12px;
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
   }
-  .progress-item:last-child { margin-bottom: 0; }
   
-  .progress-label {
+  .form-group.span-2 { grid-column: span 2; }
+  .form-group.btn-align {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.span-2 { grid-column: span 1; }
+  }
+  
+  /* ================= PROGRESS BARS ================= */
+  .progress-row {
+    margin-bottom: 14px;
+  }
+  .progress-row:last-child { margin-bottom: 0; }
+  
+  .progress-info {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
     color: var(--text-muted);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
+    font-weight: 500;
   }
   
-  .progress-label strong {
-    color: var(--text-main);
+  .progress-info strong {
+    color: var(--forest-dark);
   }
   
   .progress-track {
-    height: 7px;
-    background-color: #172033;
+    height: 8px;
+    background-color: var(--sage-pale);
     border-radius: 99px;
     overflow: hidden;
   }
@@ -362,44 +470,16 @@
     transition: width 0.3s ease;
   }
   
-  .cal-fill { background: linear-gradient(90deg, #1f6feb, #238636); }
-  .pro-fill { background: linear-gradient(90deg, #8957e5, #388bfd); }
+  .fill-cal { background-color: var(--green-deep); }
+  .fill-pro { background-color: var(--forest-dark); }
   
-  /* Form grid */
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-  }
-  
-  .input-group.span-2 { grid-column: span 2; }
-  
-  @media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .input-group.span-2 { grid-column: span 1; }
-  }
-  
-  /* Meal List */
-  .list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-  .list-header h3 {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-  }
-  
-  .btn-danger-text {
+  /* ================= MEAL LIST ================= */
+  .btn-danger-link {
     background: none;
     border: none;
-    color: var(--color-danger);
-    font-size: 12px;
+    color: #a33e38;
+    font-size: 11px;
+    font-weight: 600;
     cursor: pointer;
   }
   
@@ -411,29 +491,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
     font-size: 13px;
   }
   
   .meal-row:last-child { border-bottom: none; }
   
-  .meal-tag {
+  .category-tag {
     font-size: 10px;
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 4px;
     margin-right: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--sage-pale);
+    color: var(--forest-dark);
   }
   
-  .tag-Breakfast { background: rgba(227, 179, 65, 0.15); color: #e3b341; }
-  .tag-Lunch { background: rgba(56, 139, 253, 0.15); color: #58a6ff; }
-  .tag-Dinner { background: rgba(240, 136, 62, 0.15); color: #f0883e; }
-  .tag-Snack { background: rgba(188, 140, 255, 0.15); color: #bc8cff; }
-  
-  .del-btn {
+  .delete-btn {
     background: none;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-input);
     color: var(--text-muted);
     border-radius: 4px;
     padding: 3px 8px;
@@ -441,23 +520,22 @@
     cursor: pointer;
   }
   
-  .del-btn:hover {
-    border-color: var(--color-danger);
-    color: var(--color-danger);
+  .delete-btn:hover {
+    border-color: #a33e38;
+    color: #a33e38;
   }
   
-  /* TOOLTIP */
+  /* ================= TOOLTIP ================= */
   .grid-tooltip {
     position: absolute;
     display: none;
-    background: #1c2438;
-    color: #fff;
+    background: var(--forest-dark);
+    color: #ffffff;
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 11px;
     pointer-events: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 100;
     line-height: 1.4;
   }
