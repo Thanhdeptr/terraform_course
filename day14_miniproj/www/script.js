@@ -1,6 +1,14 @@
 const STORAGE_PREFIX = "nutrition_logs_";
 const STORAGE_GOALS = "nutrition_goals";
 
+function localDateStr(d) {
+  const date = d ? new Date(d) : new Date();
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 // 1. Initial targets
 let goals = JSON.parse(localStorage.getItem(STORAGE_GOALS)) || {
   calories: 2000,
@@ -8,7 +16,7 @@ let goals = JSON.parse(localStorage.getItem(STORAGE_GOALS)) || {
 };
 
 // 2. Active date state
-let selectedDate = new Date().toISOString().split("T")[0];
+let selectedDate = localDateStr();
 
 // DOM references
 const headerCalGoal = document.getElementById("header-cal-goal");
@@ -90,8 +98,9 @@ function renderYearHeatmap() {
   monthsRow.innerHTML = "";
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const totalDays = 52 * 7;
-  
+
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - totalDays + 1);
 
@@ -102,7 +111,7 @@ function renderYearHeatmap() {
   for (let i = 0; i < totalDays; i++) {
     const d = new Date(startDate);
     d.setDate(startDate.getDate() + i);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = localDateStr(d);
 
     const currentMonth = d.getMonth();
     const weekIndex = Math.floor(i / 7);
@@ -165,7 +174,7 @@ function renderYearHeatmap() {
 
 // UPDATE RECORD DETAILS OF SELECTED DAY
 function updateActiveDayView() {
-  const isToday = selectedDate === new Date().toISOString().split("T")[0];
+  const isToday = selectedDate === localDateStr();
   viewingDateLabel.textContent = isToday ? `Today (${selectedDate})` : selectedDate;
 
   const meals = getMeals(selectedDate);

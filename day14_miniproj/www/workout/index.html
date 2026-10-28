@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CommitFit — Workout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <div class="brand">
+        <h1 class="brand-title">CommitFit</h1>
+        <p class="brand-sub">Daily Calorie & Workout Tracker | devopsminilab.site</p>
+      </div>
+
+      <div class="header-targets">
+        <div class="target-item">
+          <span class="target-label">Hard Set Goal</span>
+          <span class="target-val"><strong id="header-hard-goal">6</strong> sets</span>
+        </div>
+        <div class="target-divider"></div>
+        <div class="target-item">
+          <span class="target-label">Plate Step</span>
+          <span class="target-val"><strong id="header-plate">2.5</strong> kg</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="heatmap-folder">
+      <nav class="folder-tabs">
+        <a href="/" class="folder-tab">Nutrition</a>
+        <a href="/workout" class="folder-tab active">Workout</a>
+      </nav>
+    <section class="card heatmap-card">
+      <div class="card-header">
+        <span class="card-title" id="total-days-logged">0 sessions this year</span>
+        <div class="heatmap-legend">
+          <span>Rest</span>
+          <span class="legend-cell lvl-0"></span>
+          <span class="legend-cell lvl-1"></span>
+          <span class="legend-cell lvl-2"></span>
+          <span class="legend-cell lvl-3"></span>
+          <span class="legend-cell lvl-pr"></span>
+          <span>PR</span>
+        </div>
+      </div>
+
+      <div class="heatmap-wrapper">
+        <div class="months-row" id="months-row"></div>
+        <div class="heatmap-body">
+          <div class="weekdays-col">
+            <span></span>
+            <span>Mon</span>
+            <span></span>
+            <span>Wed</span>
+            <span></span>
+            <span>Fri</span>
+            <span></span>
+          </div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <div class="section-heading">
+      <div class="heading-left">
+        <span class="status-indicator"></span>
+        <h2>Session for <span id="viewing-date-label">Today</span></h2>
+      </div>
+      <button id="toggle-goals-btn" class="btn-link">Edit Settings</button>
+    </div>
+
+    <div class="card goals-drawer" id="goals-drawer" style="display: none;">
+      <div class="goals-grid">
+        <div class="form-group">
+          <label>Hard Set Target</label>
+          <input type="number" id="input-hard-goal" value="6" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label>Plate Increment (kg)</label>
+          <input type="number" id="input-plate" value="2.5" min="0.5" step="any" inputmode="decimal">
+        </div>
+        <button id="save-goals-btn" class="btn btn-primary">Save Settings</button>
+      </div>
+      <div class="add-exercise-row">
+        <div class="form-group span-2">
+          <label>New Exercise</label>
+          <input type="text" id="new-ex-name" placeholder="e.g. Incline Press">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <div class="custom-select-wrapper" id="new-ex-role-select">
+            <input type="hidden" id="new-ex-role" value="anchor">
+            <div class="custom-select-trigger">
+              <span id="new-ex-role-label">Anchor</span>
+              <span class="dropdown-chevron"></span>
+            </div>
+            <div class="custom-options">
+              <div class="custom-option selected" data-value="anchor">Anchor</div>
+              <div class="custom-option" data-value="isolation">Isolation</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Muscle Group</label>
+          <div class="combo-wrapper" id="muscle-combo">
+            <input type="hidden" id="new-ex-muscle" value="chest">
+            <input type="text" id="muscle-combo-input" placeholder="Type to filter" autocomplete="off" spellcheck="false">
+            <div class="custom-options" id="muscle-combo-options"></div>
+          </div>
+        </div>
+        <div class="form-group btn-align">
+          <button type="button" id="add-exercise-btn" class="btn btn-primary">Add Lift</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="flag-row" id="flag-row">
+        <button type="button" class="flag-chip" data-flag="deload">Deload</button>
+        <button type="button" class="flag-chip" data-flag="highStress">High stress</button>
+        <button type="button" class="flag-chip" data-flag="poorSleep">Poor sleep</button>
+        <span class="flag-hint">Noisy days are excluded from 30-day baseline &amp; PRs</span>
+      </div>
+    </section>
+
+    <section class="card progress-card">
+      <div class="progress-row">
+        <div class="progress-info">
+          <span>Day quality <span id="day-level-badge" class="level-badge">Rest Day</span></span>
+          <strong><span id="day-hard-count">0</span> / <span id="day-hard-target">6</span> hard sets</strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-wo" id="day-progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="progress-row">
+        <div class="progress-info">
+          <span id="lift-progress-label">Lift e1RM</span>
+          <strong><span id="lift-e1rm-count">—</span> / <span id="lift-e1rm-target">—</span></strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-lift" id="lift-progress-bar"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 class="card-subtitle">Log Set</h3>
+      <form id="set-form">
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label>Exercise</label>
+            <div class="custom-select-wrapper" id="custom-ex-select">
+              <input type="hidden" id="set-exercise" value="">
+              <div class="custom-select-trigger">
+                <span id="selected-ex-label">Select lift</span>
+                <span class="dropdown-chevron"></span>
+              </div>
+              <div class="custom-options" id="ex-options"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="set-weight" placeholder="0" min="0" step="any" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label>Reps</label>
+            <input type="number" id="set-reps" placeholder="0" min="1" max="30" required>
+          </div>
+          <div class="form-group">
+            <label>RIR</label>
+            <input type="number" id="set-rir" placeholder="2" min="0" max="5" step="1" value="2" required>
+          </div>
+          <div class="form-group btn-align">
+            <button type="submit" class="btn btn-primary">Log Set</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="suggest-panel" id="suggest-panel">
+        <div class="suggest-header">
+          <span>Auto-suggest</span>
+          <div class="rir-toggle" id="rir-toggle">
+            <button type="button" class="rir-btn active" data-rir="0">Target RIR 0</button>
+            <button type="button" class="rir-btn" data-rir="1">Target RIR 1</button>
+          </div>
+        </div>
+        <div id="suggest-body" class="suggest-body">Pick a lift to see the next overload target.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h3 class="card-subtitle">Set History</h3>
+        <button id="reset-day-btn" class="btn-danger-link">Clear Day</button>
+      </div>
+      <div class="lift-groups" id="set-list"></div>
+    </section>
+  </div>
+
+  <div id="grid-tooltip" class="grid-tooltip"></div>
+  <div id="ex-context-menu" class="context-menu" hidden>
+    <button type="button" data-action="edit">Edit</button>
+    <button type="button" data-action="delete">Delete</button>
+  </div>
+  <script src="/workout/engine.js"></script>
+  <script src="/workout/workout.js"></script>
+</body>
+</html>
