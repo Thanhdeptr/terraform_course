@@ -15,7 +15,10 @@ resource "aws_s3_bucket_public_access_block" "block" {
 
 #thêm file vào bucket
 resource "aws_s3_object" "site_files" {
-  for_each = fileset("${path.module}/www", "**")
+  for_each = toset([
+    for f in fileset("${path.module}/www", "**") : f
+    if f != "cf-rewrite-index.js"
+  ])
 
   bucket = aws_s3_bucket.static_site.id
   key    = each.value
@@ -40,7 +43,7 @@ resource "aws_route53_zone" "primary" {
 
 # tạo yêu cầu cấp chứng chỉ SSL từ AWS ACM
 resource "aws_acm_certificate" "site_cert" {
-  provider          = aws.us_east_1  # CloudFront bắt buộc SSL phải nằm ở us-east-1
+  provider          = aws.us_east_1 # CloudFront bắt buộc SSL phải nằm ở us-east-1
   domain_name       = "devopsminilab.site"
   validation_method = "DNS"
 
@@ -84,6 +87,14 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_cloudfront_function" "rewrite_index" {
+  name    = "rewrite-directory-index"
+  runtime = "cloudfront-js-2.0"
+  comment = "Map /workout and other directory URIs to index.html"
+  publish = true
+  code    = file("${path.module}/www/cf-rewrite-index.js")
+}
+
 resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled             = true
   default_root_object = "index.html"
@@ -112,6 +123,11 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite_index.arn
+    }
   }
 
   restrictions {
@@ -137,8 +153,8 @@ resource "aws_s3_bucket_policy" "allow_cloudfront" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontReadOnly"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontReadOnly"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
