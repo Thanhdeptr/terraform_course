@@ -23,3 +23,8 @@ output "dynamodb_table_arn" {
   description = "CommitFit DynamoDB table ARN"
   value       = aws_dynamodb_table.commitfit.arn
 }
+
+output "api_endpoint" {
+  description = "CommitFit HTTP API endpoint"
+  value       = aws_apigatewayv2_api.commitfit.api_endpoint
+}
