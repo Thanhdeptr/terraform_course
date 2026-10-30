@@ -206,17 +206,19 @@ body {
 
 .heatmap-wrapper {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .months-row {
-  display: grid;
-  grid-template-columns: repeat(52, 1fr);
   font-size: 10px;
   color: var(--text-muted);
   height: 16px;
   margin-left: 28px;
   margin-bottom: 6px;
   position: relative;
+  min-width: 663px;
 }
 
 .month-label-item {
@@ -228,6 +230,7 @@ body {
 .heatmap-body {
   display: flex;
   gap: 6px;
+  min-width: max-content;
 }
 
 .weekdays-col {
@@ -248,7 +251,7 @@ body {
   grid-auto-flow: column;
   grid-auto-columns: 10px;
   gap: 2.5px;
-  width: 100%;
+  width: max-content;
 }
 
 .day-cell {
@@ -269,6 +272,11 @@ body {
   outline: 2px solid var(--forest-dark) !important;
   transform: scale(1.2);
   z-index: 6;
+}
+
+.day-cell.is-pad {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Heatmap levels */
@@ -602,6 +610,8 @@ input:focus {
   .form-group.span-3 { grid-column: span 1; }
   .add-exercise-row { grid-template-columns: 1fr; }
   .goals-grid { flex-direction: column; align-items: stretch; }
+  .heatmap-card { padding: 14px 10px; }
+  .card-header { gap: 8px; }
 }
 
 /* ================= PROGRESS BARS ================= */

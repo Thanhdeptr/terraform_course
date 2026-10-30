@@ -9,16 +9,22 @@ function localDateStr(d) {
   return `${y}-${m}-${day}`;
 }
 
-// 1. Initial targets
+function heatmapRange() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 52 * 7 + 1);
+  return { from: localDateStr(startDate), to: localDateStr(today) };
+}
+
 let goals = JSON.parse(localStorage.getItem(STORAGE_GOALS)) || {
   calories: 2000,
   protein: 120
 };
 
-// 2. Active date state
 let selectedDate = localDateStr();
+let mealsByDate = {};
 
-// DOM references
 const headerCalGoal = document.getElementById("header-cal-goal");
 const headerProGoal = document.getElementById("header-pro-goal");
 const inputCalGoal = document.getElementById("input-cal-goal");
@@ -44,7 +50,6 @@ const mealForm = document.getElementById("meal-form");
 const mealList = document.getElementById("meal-list");
 const resetDayBtn = document.getElementById("reset-day-btn");
 
-// Xử lý Custom Select cho Meal Category
 const customSelect = document.getElementById("custom-meal-select");
 const selectTrigger = customSelect.querySelector(".custom-select-trigger");
 const selectedMealLabel = document.getElementById("selected-meal-label");
@@ -69,7 +74,6 @@ customOptions.forEach(option => {
   });
 });
 
-// Đóng dropdown khi click ra ngoài
 document.addEventListener("click", () => {
   customSelect.classList.remove("open");
 });
@@ -82,17 +86,43 @@ function syncGoalDisplays() {
   dayCalTarget.textContent = goals.calories;
   dayProTarget.textContent = goals.protein;
 }
-syncGoalDisplays();
+
+function loadMealsFromLocal() {
+  mealsByDate = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || key.indexOf(STORAGE_PREFIX) !== 0) continue;
+    const dateStr = key.slice(STORAGE_PREFIX.length);
+    try {
+      mealsByDate[dateStr] = JSON.parse(localStorage.getItem(key)) || [];
+    } catch (err) {
+      mealsByDate[dateStr] = [];
+    }
+  }
+}
+
+function persistMealsLocal(dateStr, meals) {
+  mealsByDate[dateStr] = meals;
+  if (!meals.length) localStorage.removeItem(`${STORAGE_PREFIX}${dateStr}`);
+  else localStorage.setItem(`${STORAGE_PREFIX}${dateStr}`, JSON.stringify(meals));
+}
 
 function getMeals(dateStr) {
+  if (mealsByDate[dateStr]) return mealsByDate[dateStr];
   return JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${dateStr}`)) || [];
 }
 
-function saveMeals(dateStr, meals) {
-  localStorage.setItem(`${STORAGE_PREFIX}${dateStr}`, JSON.stringify(meals));
+async function refreshMealsFromApi() {
+  const range = heatmapRange();
+  const data = await CommitFitApi.api(`/nutrition?from=${range.from}&to=${range.to}`);
+  mealsByDate = {};
+  (data.items || []).forEach((meal) => {
+    if (!mealsByDate[meal.date]) mealsByDate[meal.date] = [];
+    mealsByDate[meal.date].push(meal);
+  });
+  Object.keys(mealsByDate).forEach((dateStr) => persistMealsLocal(dateStr, mealsByDate[dateStr]));
 }
 
-// RENDER 52-WEEK HEATMAP & LABELS
 function renderYearHeatmap() {
   heatmapGrid.innerHTML = "";
   monthsRow.innerHTML = "";
@@ -103,6 +133,13 @@ function renderYearHeatmap() {
 
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - totalDays + 1);
+  const startPad = startDate.getDay();
+
+  for (let p = 0; p < startPad; p++) {
+    const pad = document.createElement("div");
+    pad.className = "day-cell is-pad";
+    heatmapGrid.appendChild(pad);
+  }
 
   let loggedCount = 0;
   let lastRenderedMonth = -1;
@@ -114,7 +151,7 @@ function renderYearHeatmap() {
     const dateStr = localDateStr(d);
 
     const currentMonth = d.getMonth();
-    const weekIndex = Math.floor(i / 7);
+    const weekIndex = Math.floor((i + startPad) / 7);
 
     if (currentMonth !== lastRenderedMonth && d.getDay() === 1) {
       const monthSpan = document.createElement("span");
@@ -170,9 +207,10 @@ function renderYearHeatmap() {
   }
 
   totalDaysLogged.textContent = `${loggedCount} days logged this year`;
+  const wrapper = document.querySelector(".heatmap-wrapper");
+  if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
 }
 
-// UPDATE RECORD DETAILS OF SELECTED DAY
 function updateActiveDayView() {
   const isToday = selectedDate === localDateStr();
   viewingDateLabel.textContent = isToday ? `Today (${selectedDate})` : selectedDate;
@@ -194,24 +232,30 @@ function updateActiveDayView() {
   if (meals.length === 0) {
     mealList.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 14px; font-size: 13px;">No meal entries logged for this date.</li>`;
   } else {
-    meals.forEach((m, idx) => {
+    meals.forEach((m) => {
       const li = document.createElement("li");
       li.className = "meal-row";
+      const mealId = m.id || "";
       li.innerHTML = `
         <div>
           <span class="category-tag">${m.type}</span>
           <strong>${m.name}</strong>
           <span style="color: var(--text-muted); font-size: 12px; margin-left: 6px;">${m.calories} kcal | ${m.protein}g P</span>
         </div>
-        <button class="delete-btn" onclick="removeMeal(${idx})">Delete</button>
+        <button class="delete-btn" data-id="${mealId}">Delete</button>
       `;
+      li.querySelector(".delete-btn").addEventListener("click", () => removeMeal(mealId, m));
       mealList.appendChild(li);
     });
   }
 }
 
-// Form Submit
-mealForm.addEventListener("submit", (e) => {
+function refreshView() {
+  renderYearHeatmap();
+  updateActiveDayView();
+}
+
+mealForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const type = hiddenMealInput.value;
   const name = document.getElementById("meal-name").value.trim();
@@ -220,49 +264,111 @@ mealForm.addEventListener("submit", (e) => {
 
   if (!name || isNaN(calories) || isNaN(protein)) return;
 
-  const currentMeals = getMeals(selectedDate);
-  currentMeals.push({ type, name, calories, protein });
-  saveMeals(selectedDate, currentMeals);
+  const meal = { type, name, calories, protein };
+  const currentMeals = getMeals(selectedDate).slice();
+
+  try {
+    if (CommitFitApi.enabled()) {
+      const saved = await CommitFitApi.api(`/nutrition/${selectedDate}`, { method: "POST", body: meal });
+      currentMeals.push(saved);
+    } else {
+      currentMeals.push(meal);
+    }
+    persistMealsLocal(selectedDate, currentMeals);
+  } catch (err) {
+    currentMeals.push(meal);
+    persistMealsLocal(selectedDate, currentMeals);
+  }
 
   document.getElementById("meal-name").value = "";
   document.getElementById("meal-cal").value = "";
   document.getElementById("meal-pro").value = "";
 
-  renderYearHeatmap();
-  updateActiveDayView();
+  refreshView();
 });
 
-window.removeMeal = function(index) {
-  const currentMeals = getMeals(selectedDate);
-  currentMeals.splice(index, 1);
-  saveMeals(selectedDate, currentMeals);
-
-  renderYearHeatmap();
-  updateActiveDayView();
-};
-
-resetDayBtn.addEventListener("click", () => {
-  if (confirm(`Clear all meal records for ${selectedDate}?`)) {
-    localStorage.removeItem(`${STORAGE_PREFIX}${selectedDate}`);
-    renderYearHeatmap();
-    updateActiveDayView();
+async function removeMeal(id, meal) {
+  const currentMeals = getMeals(selectedDate).slice();
+  const next = id
+    ? currentMeals.filter((m) => m.id !== id)
+    : currentMeals.filter((m) => m !== meal);
+  persistMealsLocal(selectedDate, next);
+  try {
+    if (CommitFitApi.enabled() && id) {
+      await CommitFitApi.api(`/nutrition/${selectedDate}/${encodeURIComponent(id)}`, { method: "DELETE" });
+    }
+  } catch (err) {
+    persistMealsLocal(selectedDate, currentMeals);
   }
+  refreshView();
+}
+
+resetDayBtn.addEventListener("click", async () => {
+  if (!confirm(`Clear all meal records for ${selectedDate}?`)) return;
+  const previous = getMeals(selectedDate).slice();
+  persistMealsLocal(selectedDate, []);
+  try {
+    if (CommitFitApi.enabled()) {
+      await CommitFitApi.api(`/nutrition/${selectedDate}`, { method: "DELETE" });
+    }
+  } catch (err) {
+    persistMealsLocal(selectedDate, previous);
+  }
+  refreshView();
 });
 
 toggleGoalsBtn.addEventListener("click", () => {
   goalsDrawer.style.display = goalsDrawer.style.display === "none" ? "block" : "none";
 });
 
-saveGoalsBtn.addEventListener("click", () => {
+saveGoalsBtn.addEventListener("click", async () => {
   goals.calories = Number(inputCalGoal.value) || 2000;
   goals.protein = Number(inputProGoal.value) || 120;
   localStorage.setItem(STORAGE_GOALS, JSON.stringify(goals));
-  
+  try {
+    if (CommitFitApi.enabled()) {
+      await CommitFitApi.api("/profile", {
+        method: "PUT",
+        body: { calorieGoal: goals.calories, proteinGoal: goals.protein }
+      });
+    }
+  } catch (err) {
+    /* local copy already saved */
+  }
   syncGoalDisplays();
   goalsDrawer.style.display = "none";
-  renderYearHeatmap();
-  updateActiveDayView();
+  refreshView();
 });
 
-renderYearHeatmap();
-updateActiveDayView();
+async function boot() {
+  loadMealsFromLocal();
+  if (!CommitFitApi.enabled()) {
+    syncGoalDisplays();
+    refreshView();
+    return;
+  }
+  let cloudProfile = null;
+  try {
+    cloudProfile = await CommitFitApi.api("/profile");
+  } catch (err) {
+    if (!err || err.status !== 404) loadMealsFromLocal();
+  }
+  if (cloudProfile) {
+    goals = {
+      calories: cloudProfile.calorieGoal,
+      protein: cloudProfile.proteinGoal
+    };
+    localStorage.setItem(STORAGE_GOALS, JSON.stringify(goals));
+  }
+  try {
+    await CommitFitApi.migrateLocalDataIfNeeded({ uploadProfile: !cloudProfile });
+    await refreshMealsFromApi();
+  } catch (err) {
+    loadMealsFromLocal();
+  }
+  syncGoalDisplays();
+  refreshView();
+}
+
+syncGoalDisplays();
+boot();

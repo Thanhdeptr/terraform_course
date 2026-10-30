@@ -1,0 +1,7 @@
+{
+  "name": "commitfit-api",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "Uses AWS SDK v3 bundled in the Node.js 20 Lambda runtime"
+}

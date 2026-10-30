@@ -41,6 +41,7 @@ let settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS)) || {
 };
 let selectedDate = WorkoutEngine.localDateStr();
 let targetRIR = 0;
+let logsByDate = {};
 
 const headerHardGoal = document.getElementById("header-hard-goal");
 const headerPlate = document.getElementById("header-plate");
@@ -99,37 +100,89 @@ function formatKg(n) {
   return Number(n).toFixed(1).replace(/\.0$/, "");
 }
 
-function loadAllLogs() {
-  const logs = {};
+function heatmapRange() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const from = new Date(today);
+  from.setFullYear(from.getFullYear() - 5);
+  return { from: WorkoutEngine.localDateStr(from), to: WorkoutEngine.localDateStr(today) };
+}
+
+function loadLogsFromLocal() {
+  logsByDate = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key || key.indexOf(STORAGE_PREFIX) !== 0) continue;
     const dateStr = key.slice(STORAGE_PREFIX.length);
     try {
-      logs[dateStr] = JSON.parse(localStorage.getItem(key));
+      logsByDate[dateStr] = JSON.parse(localStorage.getItem(key));
     } catch (err) {
-      logs[dateStr] = emptyLog();
+      logsByDate[dateStr] = emptyLog();
     }
   }
-  return logs;
+}
+
+function loadAllLogs() {
+  return logsByDate;
 }
 
 function getLog(dateStr) {
+  const parsed = logsByDate[dateStr];
+  if (parsed) {
+    return {
+      flags: Object.assign(emptyLog().flags, parsed.flags || {}),
+      sets: (parsed.sets || []).slice()
+    };
+  }
   const raw = localStorage.getItem(`${STORAGE_PREFIX}${dateStr}`);
   if (!raw) return emptyLog();
   try {
-    const parsed = JSON.parse(raw);
+    const local = JSON.parse(raw);
     return {
-      flags: Object.assign(emptyLog().flags, parsed.flags || {}),
-      sets: parsed.sets || []
+      flags: Object.assign(emptyLog().flags, local.flags || {}),
+      sets: local.sets || []
     };
   } catch (err) {
     return emptyLog();
   }
 }
 
-function saveLog(dateStr, log) {
+function persistLogLocal(dateStr, log) {
+  const empty = !log.sets.length && !log.flags.deload && !log.flags.highStress && !log.flags.poorSleep;
+  if (empty) {
+    delete logsByDate[dateStr];
+    localStorage.removeItem(`${STORAGE_PREFIX}${dateStr}`);
+    return;
+  }
+  logsByDate[dateStr] = log;
   localStorage.setItem(`${STORAGE_PREFIX}${dateStr}`, JSON.stringify(log));
+}
+
+async function saveLog(dateStr, log) {
+  persistLogLocal(dateStr, log);
+  if (!CommitFitApi.enabled()) return;
+  try {
+    if (!log.sets.length && !log.flags.deload && !log.flags.highStress && !log.flags.poorSleep) {
+      await CommitFitApi.api(`/workouts/${dateStr}`, { method: "DELETE" });
+    } else {
+      await CommitFitApi.api(`/workouts/${dateStr}`, { method: "PUT", body: log });
+    }
+  } catch (err) {
+    /* local copy already saved */
+  }
+}
+
+async function refreshLogsFromApi() {
+  const range = heatmapRange();
+  const data = await CommitFitApi.api(`/workouts?from=${range.from}&to=${range.to}`);
+  logsByDate = {};
+  (data.items || []).forEach((item) => {
+    logsByDate[item.date] = {
+      flags: Object.assign(emptyLog().flags, item.flags || {}),
+      sets: item.sets || []
+    };
+    persistLogLocal(item.date, logsByDate[item.date]);
+  });
 }
 
 function findExercise(id) {
@@ -138,6 +191,27 @@ function findExercise(id) {
 
 function persistCatalog() {
   localStorage.setItem(STORAGE_CATALOG, JSON.stringify(catalog));
+}
+
+async function saveExerciseRemote(exercise, isNew) {
+  persistCatalog();
+  if (!CommitFitApi.enabled()) return;
+  try {
+    if (isNew) {
+      const saved = await CommitFitApi.api("/exercises", { method: "POST", body: exercise });
+      if (saved && saved.id && saved.id !== exercise.id) {
+        catalog = catalog.map((item) => (item.id === exercise.id ? saved : item));
+        persistCatalog();
+        if (hiddenExInput.value === exercise.id) hiddenExInput.value = saved.id;
+        return saved;
+      }
+    } else {
+      await CommitFitApi.api(`/exercises/${encodeURIComponent(exercise.id)}`, { method: "PUT", body: exercise });
+    }
+  } catch (err) {
+    /* local catalog already saved */
+  }
+  return exercise;
 }
 
 function muscleLabel(id) {
@@ -218,21 +292,6 @@ function showContextMenu(event, exerciseId) {
   exContextMenu.style.top = `${y}px`;
 }
 
-function rewriteExerciseMeta(exercise) {
-  const logs = loadAllLogs();
-  Object.keys(logs).forEach((dateStr) => {
-    let changed = false;
-    (logs[dateStr].sets || []).forEach((set) => {
-      if (set.exerciseId !== exercise.id) return;
-      set.name = exercise.name;
-      set.role = exercise.role;
-      set.muscleGroup = exercise.muscleGroup;
-      changed = true;
-    });
-    if (changed) saveLog(dateStr, logs[dateStr]);
-  });
-}
-
 function startEditExercise(id) {
   const exercise = findExercise(id);
   if (!exercise) return;
@@ -246,7 +305,7 @@ function startEditExercise(id) {
   document.getElementById("new-ex-name").focus();
 }
 
-function deleteExercise(id) {
+async function deleteExercise(id) {
   hideContextMenu();
   const exercise = findExercise(id);
   if (!exercise) return;
@@ -257,6 +316,13 @@ function deleteExercise(id) {
   if (!confirm(`Delete ${exercise.name} from the catalog?`)) return;
   catalog = catalog.filter((item) => item.id !== id);
   persistCatalog();
+  if (CommitFitApi.enabled()) {
+    try {
+      await CommitFitApi.api(`/exercises/${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch (err) {
+      /* local catalog already updated */
+    }
+  }
   if (hiddenExInput.value === id) hiddenExInput.value = catalog[0].id;
   if (editingExerciseId === id) resetExerciseForm();
   renderExerciseOptions();
@@ -487,6 +553,13 @@ function renderYearHeatmap() {
   const totalDays = 52 * 7;
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - totalDays + 1);
+  const startPad = startDate.getDay();
+
+  for (let p = 0; p < startPad; p++) {
+    const pad = document.createElement("div");
+    pad.className = "day-cell is-pad";
+    heatmapGrid.appendChild(pad);
+  }
 
   let loggedCount = 0;
   let lastRenderedMonth = -1;
@@ -497,7 +570,7 @@ function renderYearHeatmap() {
     d.setDate(startDate.getDate() + i);
     const dateStr = WorkoutEngine.localDateStr(d);
     const currentMonth = d.getMonth();
-    const weekIndex = Math.floor(i / 7);
+    const weekIndex = Math.floor((i + startPad) / 7);
 
     if (currentMonth !== lastRenderedMonth && d.getDay() === 1) {
       const monthSpan = document.createElement("span");
@@ -547,6 +620,8 @@ function renderYearHeatmap() {
   }
 
   totalDaysLogged.textContent = `${loggedCount} sessions this year`;
+  const wrapper = document.querySelector(".heatmap-wrapper");
+  if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
 }
 
 function updateActiveDayView() {
@@ -626,14 +701,10 @@ function refreshAll() {
   updateActiveDayView();
 }
 
-window.removeSet = function (index) {
+window.removeSet = async function (index) {
   const log = getLog(selectedDate);
   log.sets.splice(index, 1);
-  if (!log.sets.length && !log.flags.deload && !log.flags.highStress && !log.flags.poorSleep) {
-    localStorage.removeItem(`${STORAGE_PREFIX}${selectedDate}`);
-  } else {
-    saveLog(selectedDate, log);
-  }
+  await saveLog(selectedDate, log);
   refreshAll();
 };
 
@@ -712,11 +783,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.querySelectorAll(".flag-chip").forEach((chip) => {
-  chip.addEventListener("click", () => {
+  chip.addEventListener("click", async () => {
     const log = getLog(selectedDate);
     const key = chip.dataset.flag;
     log.flags[key] = !log.flags[key];
-    saveLog(selectedDate, log);
+    await saveLog(selectedDate, log);
     refreshAll();
   });
 });
@@ -735,39 +806,52 @@ document.querySelectorAll(".rir-btn").forEach((btn) => {
   document.getElementById(id).addEventListener("change", updateSuggest);
 });
 
-setForm.addEventListener("submit", (e) => {
+setForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const extra = hypotheticalSet();
   if (!extra) return;
+  extra.id = extra.id || `set_${Date.now()}`;
   const log = getLog(selectedDate);
   log.sets.push(extra);
-  saveLog(selectedDate, log);
+  await saveLog(selectedDate, log);
   document.getElementById("set-weight").value = extra.weight;
   document.getElementById("set-reps").value = extra.reps;
   refreshAll();
 });
 
-resetDayBtn.addEventListener("click", () => {
-  if (confirm(`Clear all workout records for ${selectedDate}?`)) {
-    localStorage.removeItem(`${STORAGE_PREFIX}${selectedDate}`);
-    refreshAll();
-  }
+resetDayBtn.addEventListener("click", async () => {
+  if (!confirm(`Clear all workout records for ${selectedDate}?`)) return;
+  await saveLog(selectedDate, emptyLog());
+  refreshAll();
 });
 
 toggleGoalsBtn.addEventListener("click", () => {
   goalsDrawer.style.display = goalsDrawer.style.display === "none" ? "block" : "none";
 });
 
-saveGoalsBtn.addEventListener("click", () => {
+saveGoalsBtn.addEventListener("click", async () => {
   settings.hardSetTarget = Number(inputHardGoal.value) || WorkoutEngine.DEFAULT_HARD_SET_TARGET;
   settings.plateIncrement = Number(inputPlate.value) || WorkoutEngine.DEFAULT_PLATE;
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
+  try {
+    if (CommitFitApi.enabled()) {
+      await CommitFitApi.api("/profile", {
+        method: "PUT",
+        body: {
+          hardSetTarget: settings.hardSetTarget,
+          plateIncrement: settings.plateIncrement
+        }
+      });
+    }
+  } catch (err) {
+    /* local settings already saved */
+  }
   syncSettingsDisplays();
   goalsDrawer.style.display = "none";
   refreshAll();
 });
 
-addExerciseBtn.addEventListener("click", () => {
+addExerciseBtn.addEventListener("click", async () => {
   const name = document.getElementById("new-ex-name").value.trim();
   const muscle = hiddenMuscleInput.value || "chest";
   const role = hiddenRoleInput.value === "isolation" ? "isolation" : "anchor";
@@ -778,15 +862,15 @@ addExerciseBtn.addEventListener("click", () => {
     exercise.name = name;
     exercise.role = role;
     exercise.muscleGroup = muscle;
-    persistCatalog();
-    rewriteExerciseMeta(exercise);
+    await saveExerciseRemote(exercise, false);
     hiddenExInput.value = exercise.id;
     resetExerciseForm();
   } else {
     const id = `custom_${Date.now()}`;
-    catalog.push({ id, name, role, muscleGroup: muscle });
-    persistCatalog();
-    hiddenExInput.value = id;
+    const exercise = { id, name, role, muscleGroup: muscle };
+    catalog.push(exercise);
+    const saved = await saveExerciseRemote(exercise, true);
+    hiddenExInput.value = saved && saved.id ? saved.id : id;
     document.getElementById("new-ex-name").value = "";
     setMuscleValue(muscle);
   }
@@ -796,8 +880,39 @@ addExerciseBtn.addEventListener("click", () => {
   refreshAll();
 });
 
-renderExerciseOptions();
-setMuscleValue("chest");
-syncSettingsDisplays();
-prefillFromLastSet();
-refreshAll();
+async function boot() {
+  loadLogsFromLocal();
+  if (CommitFitApi.enabled()) {
+    let cloudProfile = null;
+    try {
+      cloudProfile = await CommitFitApi.api("/profile");
+    } catch (err) {
+      if (!err || err.status !== 404) loadLogsFromLocal();
+    }
+    if (cloudProfile) {
+      settings = {
+        hardSetTarget: cloudProfile.hardSetTarget,
+        plateIncrement: cloudProfile.plateIncrement
+      };
+      localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
+    }
+    try {
+      await CommitFitApi.migrateLocalDataIfNeeded({ uploadProfile: !cloudProfile });
+      const exercises = await CommitFitApi.api("/exercises");
+      if (exercises.items && exercises.items.length) {
+        catalog = exercises.items;
+        persistCatalog();
+      }
+      await refreshLogsFromApi();
+    } catch (err) {
+      loadLogsFromLocal();
+    }
+  }
+  renderExerciseOptions();
+  setMuscleValue("chest");
+  syncSettingsDisplays();
+  prefillFromLastSet();
+  refreshAll();
+}
+
+boot();
