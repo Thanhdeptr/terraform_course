@@ -4,6 +4,7 @@
 #   PROFILE
 #   EX#<exerciseId>
 #   N#<yyyy-mm-dd>#<ulid>     meal
+#   PIN#<id>                  pinned meal template
 #   W#<yyyy-mm-dd>            workout day (flags + sets[])
 
 resource "aws_dynamodb_table" "commitfit" {

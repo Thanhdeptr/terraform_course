@@ -7,10 +7,14 @@ locals {
     "PUT /exercises/{id}",
     "DELETE /exercises/{id}",
     "GET /nutrition",
+    "POST /nutrition/estimate",
     "POST /nutrition/{date}",
     "PUT /nutrition/{date}/{id}",
     "DELETE /nutrition/{date}",
     "DELETE /nutrition/{date}/{id}",
+    "GET /pins",
+    "POST /pins",
+    "DELETE /pins/{id}",
     "GET /workouts",
     "GET /workouts/{date}",
     "PUT /workouts/{date}",
@@ -43,6 +47,8 @@ resource "aws_apigatewayv2_route" "commitfit" {
   api_id    = aws_apigatewayv2_api.commitfit.id
   route_key = each.value
   target    = "integrations/${aws_apigatewayv2_integration.commitfit.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_stage" "commitfit_default" {
@@ -52,12 +58,34 @@ resource "aws_apigatewayv2_stage" "commitfit_default" {
 }
 
 resource "aws_s3_object" "api_config" {
-  bucket        = aws_s3_bucket.static_site.id
-  key           = "config.js"
-  content       = <<-EOF
+  bucket = aws_s3_bucket.static_site.id
+  key    = "config.js"
+  content = <<-EOF
     window.COMMITFIT_API_BASE = "${aws_apigatewayv2_api.commitfit.api_endpoint}";
+    window.COMMITFIT_COGNITO = {
+      region: "${var.aws_region}",
+      userPoolId: "${aws_cognito_user_pool.commitfit.id}",
+      clientId: "${aws_cognito_user_pool_client.commitfit_web.id}"
+    };
   EOF
-  content_type  = "application/javascript"
-  etag          = md5("${aws_apigatewayv2_api.commitfit.api_endpoint}")
+  content_type = "application/javascript"
+  etag = md5(join("", [
+    aws_apigatewayv2_api.commitfit.api_endpoint,
+    var.aws_region,
+    aws_cognito_user_pool.commitfit.id,
+    aws_cognito_user_pool_client.commitfit_web.id
+  ]))
   cache_control = "max-age=60"
+}
+
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  api_id           = aws_apigatewayv2_api.commitfit.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "cognito-jwt-authorizer"
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.commitfit_web.id]
+    issuer   = "https://${aws_cognito_user_pool.commitfit.endpoint}"
+  }
 }
