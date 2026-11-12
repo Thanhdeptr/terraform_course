@@ -28,3 +28,13 @@ output "api_endpoint" {
   description = "CommitFit HTTP API endpoint"
   value       = aws_apigatewayv2_api.commitfit.api_endpoint
 }
+
+output "cognito_user_pool_id" {
+  description = "CommitFit Cognito user pool ID"
+  value       = aws_cognito_user_pool.commitfit.id
+}
+
+output "cognito_client_id" {
+  description = "CommitFit Cognito web client ID"
+  value       = aws_cognito_user_pool_client.commitfit_web.id
+}

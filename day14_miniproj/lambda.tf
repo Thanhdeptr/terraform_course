@@ -1,11 +1,15 @@
 data "archive_file" "commitfit_lambda" {
   type        = "zip"
+  source_dir  = "${path.module}/lambda"
   output_path = "${path.module}/build/commitfit-lambda.zip"
-
-  source {
-    content  = file("${path.module}/lambda/index.js")
-    filename = "index.js"
-  }
+  excludes = [
+    ".env",
+    ".env.*",
+    "*.md",
+    "test-*.js",
+    ".npmrc",
+    ".DS_Store"
+  ]
 }
 
 resource "aws_iam_role" "commitfit_lambda" {
@@ -59,12 +63,14 @@ resource "aws_lambda_function" "commitfit" {
   role             = aws_iam_role.commitfit_lambda.arn
   handler          = "index.handler"
   runtime          = "nodejs20.x"
-  timeout          = 10
+  timeout          = 25
   memory_size      = 256
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.commitfit.name
+      TABLE_NAME     = aws_dynamodb_table.commitfit.name
+      GEMINI_API_KEY = var.gemini_api_key
+      GEMINI_MODEL   = var.gemini_model
     }
   }
 }
