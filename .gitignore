@@ -9,3 +9,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+day14_miniproj/build/
+day14_miniproj/lambda/node_modules/
+.env
