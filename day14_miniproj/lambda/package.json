@@ -2,6 +2,10 @@
   "name": "commitfit-api",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
-  "description": "Uses AWS SDK v3 bundled in the Node.js 20 Lambda runtime"
+  "description": "CommitFit API Lambda (ESM). AWS SDK v3 comes from the Node.js 20 runtime; @google/genai is bundled in the zip.",
+  "dependencies": {
+    "@google/genai": "^1.0.0"
+  }
 }
