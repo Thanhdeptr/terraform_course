@@ -17,23 +17,34 @@
         <p class="brand-sub">Daily Calorie & Workout Tracker | devopsminilab.site</p>
       </div>
 
-      <div class="header-targets">
-        <div class="target-item">
-          <span class="target-label">Hard Set Goal</span>
-          <span class="target-val"><strong id="header-hard-goal">6</strong> sets</span>
-        </div>
-        <div class="target-divider"></div>
-        <div class="target-item">
-          <span class="target-label">Plate Step</span>
-          <span class="target-val"><strong id="header-plate">2.5</strong> kg</span>
+      <div class="header-right">
+        <div class="header-auth">
+          <button type="button" id="auth-open-btn" class="auth-chip">Sign in</button>
+          <div id="auth-session" class="auth-session" hidden>
+            <span id="auth-name" class="auth-name"></span>
+            <button type="button" id="auth-signout-btn" class="btn-link">Sign out</button>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="heatmap-folder">
       <nav class="folder-tabs">
-        <a href="/" class="folder-tab">Nutrition</a>
-        <a href="/workout" class="folder-tab active">Workout</a>
+        <div class="folder-tab-list">
+          <a href="/" class="folder-tab">Nutrition</a>
+          <a href="/workout" class="folder-tab active">Workout</a>
+        </div>
+        <div class="header-targets">
+          <div class="target-item">
+            <span class="target-label">Hard Set Goal</span>
+            <span class="target-val"><strong id="header-hard-goal">6</strong> sets</span>
+          </div>
+          <div class="target-divider"></div>
+          <div class="target-item">
+            <span class="target-label">Plate Step</span>
+            <span class="target-val"><strong id="header-plate">2.5</strong> kg</span>
+          </div>
+        </div>
       </nav>
     <section class="card heatmap-card">
       <div class="card-header">
@@ -211,8 +222,65 @@
     <button type="button" data-action="edit">Edit</button>
     <button type="button" data-action="delete">Delete</button>
   </div>
+  <div id="auth-overlay" class="auth-overlay" hidden>
+    <div class="card auth-card">
+      <div class="card-header">
+        <h3 class="card-subtitle" id="auth-title">Sign in</h3>
+        <button type="button" id="auth-close-btn" class="btn-link">Close</button>
+      </div>
+      <p class="auth-copy" id="auth-copy">Sync meals and workouts across devices.</p>
+      <form id="auth-signin-form">
+        <div class="form-group">
+          <label for="auth-signin-email">Email</label>
+          <input type="email" id="auth-signin-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signin-password">Password</label>
+          <input type="password" id="auth-signin-password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+        <p class="auth-switch">New here? <button type="button" class="btn-link" data-auth-view="signup">Create account</button></p>
+      </form>
+      <form id="auth-signup-form" hidden>
+        <div class="form-group">
+          <label for="auth-signup-name">Name</label>
+          <input type="text" id="auth-signup-name" autocomplete="name" maxlength="40" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-email">Email</label>
+          <input type="email" id="auth-signup-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-password">Password</label>
+          <input type="password" id="auth-signup-password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-confirm">Confirm password</label>
+          <input type="password" id="auth-signup-confirm" autocomplete="new-password" minlength="8" required>
+        </div>
+        <p class="auth-hint">At least 8 characters, including a letter and a number.</p>
+        <button type="submit" class="btn btn-primary">Create account</button>
+        <p class="auth-switch">Already have an account? <button type="button" class="btn-link" data-auth-view="signin">Sign in</button></p>
+      </form>
+      <form id="auth-confirm-form" hidden>
+        <div class="form-group">
+          <label for="auth-confirm-code">Confirmation code</label>
+          <input type="text" id="auth-confirm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Confirm email</button>
+        <p class="auth-switch">
+          <button type="button" class="btn-link" id="auth-resend-btn">Resend code</button>
+          ·
+          <button type="button" class="btn-link" data-auth-view="signin">Back to sign in</button>
+        </p>
+      </form>
+      <p id="auth-error" class="auth-error" hidden></p>
+    </div>
+  </div>
   <script src="/config.js"></script>
   <script src="/api.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/demo.js"></script>
   <script src="/workout/engine.js"></script>
   <script src="/workout/workout.js"></script>
 </body>

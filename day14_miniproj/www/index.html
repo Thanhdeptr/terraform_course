@@ -18,23 +18,34 @@
         <p class="brand-sub">Daily Calorie & Workout Tracker | devopsminilab.site</p>
       </div>
       
-      <div class="header-targets">
-        <div class="target-item">
-          <span class="target-label">Calorie Goal</span>
-          <span class="target-val"><strong id="header-cal-goal">2000</strong> kcal</span>
-        </div>
-        <div class="target-divider"></div>
-        <div class="target-item">
-          <span class="target-label">Protein Goal</span>
-          <span class="target-val"><strong id="header-pro-goal">120</strong> g</span>
+      <div class="header-right">
+        <div class="header-auth">
+          <button type="button" id="auth-open-btn" class="auth-chip">Sign in</button>
+          <div id="auth-session" class="auth-session" hidden>
+            <span id="auth-name" class="auth-name"></span>
+            <button type="button" id="auth-signout-btn" class="btn-link">Sign out</button>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="heatmap-folder">
       <nav class="folder-tabs">
-        <a href="/" class="folder-tab active">Nutrition</a>
-        <a href="/workout" class="folder-tab">Workout</a>
+        <div class="folder-tab-list">
+          <a href="/" class="folder-tab active">Nutrition</a>
+          <a href="/workout" class="folder-tab">Workout</a>
+        </div>
+        <div class="header-targets">
+          <div class="target-item">
+            <span class="target-label">Calorie Goal</span>
+            <span class="target-val"><strong id="header-cal-goal">2000</strong> kcal</span>
+          </div>
+          <div class="target-divider"></div>
+          <div class="target-item">
+            <span class="target-label">Protein Goal</span>
+            <span class="target-val"><strong id="header-pro-goal">120</strong> g</span>
+          </div>
+        </div>
       </nav>
     <!-- SECTION: ANNUAL CONTRIBUTION HEATMAP -->
     <section class="card heatmap-card">
@@ -118,12 +129,18 @@
 
     <!-- ADD MEAL FORM -->
     <section class="card">
-      <h3 class="card-subtitle">Log Meal</h3>
+      <div class="card-header">
+        <h3 class="card-subtitle">Log Meal</h3>
+        <button type="button" class="btn-ai-open" id="estimate-open-btn" title="Open AI Meal Estimate">
+          <span class="btn-ai-open-icon" aria-hidden="true">✦</span>
+          AI Estimate
+        </button>
+      </div>
       <form id="meal-form">
-        <div class="form-grid">
+        <div class="form-grid meal-form-grid">
           <!-- CUSTOM DROPDOWN THAY THẾ CHO SELECT THƯỜNG -->
           <div class="form-group">
-            <label>Meal Category</label>
+            <label>Category</label>
             <div class="custom-select-wrapper" id="custom-meal-select">
               <input type="hidden" id="meal-type" value="Breakfast">
               <div class="custom-select-trigger">
@@ -139,17 +156,25 @@
             </div>
           </div>
 
-          <div class="form-group span-2">
-            <label>Food Description</label>
+          <div class="form-group meal-name-group">
+            <label>Food</label>
             <input type="text" id="meal-name" placeholder="e.g. Grilled Chicken Salad" required>
           </div>
           <div class="form-group">
-            <label>Calories (kcal)</label>
+            <label>Cal</label>
             <input type="number" id="meal-cal" placeholder="0" min="0" step="any" inputmode="decimal" required>
           </div>
           <div class="form-group">
-            <label>Protein (g)</label>
+            <label>Protein</label>
             <input type="number" id="meal-pro" placeholder="0" min="0" step="any" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label>Carbs</label>
+            <input type="number" id="meal-carbs" placeholder="0" min="0" step="any" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label>Fat</label>
+            <input type="number" id="meal-fat" placeholder="0" min="0" step="any" inputmode="decimal">
           </div>
           <div class="form-group btn-align">
             <button type="submit" class="btn btn-primary">Add Entry</button>
@@ -169,8 +194,168 @@
   </div>
 
   <div id="grid-tooltip" class="grid-tooltip"></div>
+
+  <button type="button" class="estimate-fab" id="estimate-fab" title="AI Meal Estimate" aria-label="Open AI Meal Estimate">
+    <span aria-hidden="true">✦</span>
+  </button>
+
+  <div class="estimate-backdrop" id="estimate-backdrop" hidden></div>
+  <aside class="estimate-panel" id="estimate-panel" aria-hidden="true">
+    <header class="estimate-panel-header">
+      <div class="estimate-panel-brand">
+        <span class="estimate-panel-mark" aria-hidden="true">✦</span>
+        <div>
+          <h2 class="estimate-panel-title">AI Meal Estimate</h2>
+          <p class="estimate-panel-sub">Powered by CommitFit &amp; Gemini</p>
+        </div>
+      </div>
+      <button type="button" class="estimate-panel-close" id="estimate-close-btn" aria-label="Close panel">‹</button>
+    </header>
+    <div class="estimate-panel-accent" aria-hidden="true"></div>
+
+    <div class="estimate-panel-body">
+      <div class="estimate-hero" id="estimate-hero">
+        <h3 class="estimate-hero-title">What did you eat?</h3>
+        <p class="estimate-hero-copy">Describe the meal once — dish, grams, light or heavy oil/seasoning.</p>
+      </div>
+
+      <div class="estimate-composer">
+        <label class="visually-hidden" for="estimate-description">Meal description</label>
+        <textarea
+          id="estimate-description"
+          maxlength="800"
+          rows="4"
+          placeholder="Describe your meal… e.g. 250g white rice, 150g pan-fried chicken, light oil"
+        ></textarea>
+        <div class="estimate-composer-footer">
+          <span class="estimate-char-hint">Don’t stress the exact numbers. Consistency is what drives progress.</span>
+          <button type="button" class="estimate-send-btn" id="estimate-btn" title="Estimate macros" aria-label="Estimate macros">
+            <span class="estimate-send-label">Estimate</span>
+            <span class="estimate-send-icon" aria-hidden="true">↑</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="estimate-error" id="estimate-error" hidden></p>
+
+      <div class="estimate-result-card" id="estimate-result" hidden>
+        <div class="estimate-result-top">
+          <div class="estimate-result-kicker">Ready to log</div>
+          <button type="button" class="pin-btn" id="estimate-pin-btn" title="Pin this meal" aria-label="Pin this meal" aria-pressed="false">
+            <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g transform="rotate(-45 12 12)">
+                <rect x="8.25" y="3.2" width="7.5" height="4.2" rx="2.1" />
+                <rect x="9.35" y="7" width="5.3" height="2.2" rx="1.1" />
+                <rect x="7.4" y="8.8" width="9.2" height="5.6" rx="2.6" />
+                <rect x="10.55" y="14.2" width="2.9" height="5.2" rx="1.45" />
+              </g>
+            </svg>
+          </button>
+        </div>
+        <div class="estimate-result-body">
+          <label class="visually-hidden" for="estimate-result-name">Meal name</label>
+          <input
+            type="text"
+            id="estimate-result-name"
+            class="estimate-result-name-input"
+            maxlength="120"
+            placeholder="Meal name"
+            autocomplete="off"
+          >
+          <div class="estimate-result-macros" id="estimate-result-macros"></div>
+          <ul class="estimate-result-items" id="estimate-result-items"></ul>
+        </div>
+        <button type="button" class="estimate-arrow-btn" id="estimate-arrow-btn" title="Fill Log Meal form" aria-label="Fill Log Meal form" disabled>
+          Fill form →
+        </button>
+      </div>
+
+      <div class="estimate-pins" id="estimate-pins">
+        <p class="estimate-suggestions-label">Pinned meals</p>
+        <p class="estimate-pins-empty" id="estimate-pins-empty">Pin a meal after estimate to reuse it without AI.</p>
+        <div class="estimate-pins-list" id="estimate-pins-list"></div>
+      </div>
+
+      <div class="estimate-suggestions" id="estimate-suggestions">
+        <p class="estimate-suggestions-label">Try a prompt</p>
+        <button type="button" class="estimate-suggest-card" data-estimate-prompt="250g steamed white rice, 120g grilled chicken breast, light salt and pepper">
+          <strong>Clean plate</strong>
+          <span>Rice + grilled chicken, light seasoning — baseline macros.</span>
+          <em class="estimate-tag">Quick</em>
+        </button>
+        <button type="button" class="estimate-suggest-card" data-estimate-prompt="200g white rice, 150g fried chicken thigh with sweet sauce, heavy oil, side salad 80g">
+          <strong>Fried & saucy</strong>
+          <span>Heavier oil and sauce so calories and fat adjust up.</span>
+          <em class="estimate-tag">Cooking</em>
+        </button>
+        <button type="button" class="estimate-suggest-card" data-estimate-prompt="Greek yogurt 200g, 1 medium banana, 1 tbsp honey">
+          <strong>Simple breakfast</strong>
+          <span>Named foods with amounts — fastest path to a good estimate.</span>
+          <em class="estimate-tag">Habit</em>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="auth-overlay" class="auth-overlay" hidden>
+    <div class="card auth-card">
+      <div class="card-header">
+        <h3 class="card-subtitle" id="auth-title">Sign in</h3>
+        <button type="button" id="auth-close-btn" class="btn-link">Close</button>
+      </div>
+      <p class="auth-copy" id="auth-copy">Sync meals and workouts across devices.</p>
+      <form id="auth-signin-form">
+        <div class="form-group">
+          <label for="auth-signin-email">Email</label>
+          <input type="email" id="auth-signin-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signin-password">Password</label>
+          <input type="password" id="auth-signin-password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+        <p class="auth-switch">New here? <button type="button" class="btn-link" data-auth-view="signup">Create account</button></p>
+      </form>
+      <form id="auth-signup-form" hidden>
+        <div class="form-group">
+          <label for="auth-signup-name">Name</label>
+          <input type="text" id="auth-signup-name" autocomplete="name" maxlength="40" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-email">Email</label>
+          <input type="email" id="auth-signup-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-password">Password</label>
+          <input type="password" id="auth-signup-password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-signup-confirm">Confirm password</label>
+          <input type="password" id="auth-signup-confirm" autocomplete="new-password" minlength="8" required>
+        </div>
+        <p class="auth-hint">At least 8 characters, including a letter and a number.</p>
+        <button type="submit" class="btn btn-primary">Create account</button>
+        <p class="auth-switch">Already have an account? <button type="button" class="btn-link" data-auth-view="signin">Sign in</button></p>
+      </form>
+      <form id="auth-confirm-form" hidden>
+        <div class="form-group">
+          <label for="auth-confirm-code">Confirmation code</label>
+          <input type="text" id="auth-confirm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Confirm email</button>
+        <p class="auth-switch">
+          <button type="button" class="btn-link" id="auth-resend-btn">Resend code</button>
+          ·
+          <button type="button" class="btn-link" data-auth-view="signin">Back to sign in</button>
+        </p>
+      </form>
+      <p id="auth-error" class="auth-error" hidden></p>
+    </div>
+  </div>
   <script src="/config.js"></script>
   <script src="/api.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/demo.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>
