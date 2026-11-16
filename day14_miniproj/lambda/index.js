@@ -494,6 +494,7 @@ function parseGeminiJson(response) {
   if (!text) {
     const error = new Error("Empty model response");
     error.statusCode = 502;
+    error.retryable = true;
     throw error;
   }
   try {
@@ -501,8 +502,60 @@ function parseGeminiJson(response) {
   } catch (err) {
     const error = new Error("Invalid model JSON");
     error.statusCode = 502;
+    error.retryable = true;
     throw error;
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function mapGeminiEstimateError(err) {
+  const msg = String((err && err.message) || err || "Gemini request failed");
+  const status =
+    (err && (err.status || err.statusCode || err.code)) != null
+      ? String(err.status || err.statusCode || err.code)
+      : "";
+  const timedOut = /timeout|aborted|AbortError/i.test(msg);
+  const badKey = /api key|invalid.*key|permission|unauthenticated|401|403/i.test(msg);
+  const badModel =
+    (/not found|404/i.test(msg) || status === "404") &&
+    /model/i.test(msg + " " + status);
+  // Transient capacity / upstream issues — should retry
+  const unavailable =
+    status === "503" ||
+    /503|service\s*unavailable|unavailable|overloaded|resource.?exhausted|high demand|try again/i.test(
+      msg
+    );
+
+  let publicMsg = "Meal estimate failed";
+  let statusCode = 502;
+  let retryable = true;
+
+  if (timedOut) {
+    publicMsg = "Meal estimate timed out";
+    statusCode = 504;
+    retryable = true;
+  } else if (badKey) {
+    publicMsg = "Meal estimate failed: invalid or unauthorized Gemini API key";
+    statusCode = 502;
+    retryable = false;
+  } else if (badModel) {
+    publicMsg = `Meal estimate failed: model unavailable (${GEMINI_MODEL})`;
+    statusCode = 502;
+    retryable = false;
+  } else if (unavailable) {
+    publicMsg = "Meal estimate temporarily unavailable";
+    statusCode = 503;
+    retryable = true;
+  }
+
+  const error = new Error(publicMsg);
+  error.statusCode = statusCode;
+  error.retryable = retryable;
+  error.causeMessage = msg;
+  return error;
 }
 
 async function estimateMealMacros(description) {
@@ -513,34 +566,48 @@ async function estimateMealMacros(description) {
   }
 
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-  let response;
-  try {
-    response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: description,
-      config: {
-        systemInstruction: COMPACT_SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseSchema: leanMealSchema,
-        httpOptions: { timeout: GEMINI_TIMEOUT_MS }
+  const maxAttempts = 3; // 1 initial + 2 retries
+  const retryDelayMs = 1500;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: description,
+        config: {
+          systemInstruction: COMPACT_SYSTEM_INSTRUCTION,
+          responseMimeType: "application/json",
+          responseSchema: leanMealSchema,
+          httpOptions: { timeout: GEMINI_TIMEOUT_MS }
+        }
+      });
+      return normalizeLeanMeal(parseGeminiJson(response));
+    } catch (err) {
+      const mapped =
+        err && typeof err.retryable === "boolean"
+          ? err
+          : mapGeminiEstimateError(err);
+
+      console.error(
+        `Gemini estimate error (attempt ${attempt}/${maxAttempts}):`,
+        mapped.causeMessage || mapped.message
+      );
+      lastError = mapped;
+
+      const canRetry = mapped.retryable !== false && attempt < maxAttempts;
+      if (!canRetry) {
+        const out = new Error(mapped.message || "Meal estimate failed");
+        out.statusCode = mapped.statusCode || 502;
+        throw out;
       }
-    });
-  } catch (err) {
-    const msg = String((err && err.message) || err || "Gemini request failed");
-    console.error("Gemini estimate error:", msg);
-    const timedOut = /timeout|aborted|AbortError/i.test(msg);
-    const badKey = /api key|invalid.*key|permission|unauthenticated|401|403/i.test(msg);
-    const badModel = /not found|404|model/i.test(msg) && /model/i.test(msg);
-    let publicMsg = "Meal estimate failed";
-    if (timedOut) publicMsg = "Meal estimate timed out";
-    else if (badKey) publicMsg = "Meal estimate failed: invalid or unauthorized Gemini API key";
-    else if (badModel) publicMsg = `Meal estimate failed: model unavailable (${GEMINI_MODEL})`;
-    const error = new Error(publicMsg);
-    error.statusCode = timedOut ? 504 : 502;
-    throw error;
+      await sleep(retryDelayMs);
+    }
   }
 
-  return normalizeLeanMeal(parseGeminiJson(response));
+  const out = new Error((lastError && lastError.message) || "Meal estimate failed");
+  out.statusCode = (lastError && lastError.statusCode) || 502;
+  throw out;
 }
 
 function routeParts(event) {
