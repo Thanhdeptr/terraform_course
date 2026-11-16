@@ -33,12 +33,20 @@ const MUSCLE_GROUPS = [
   { id: "core", label: "Core" }
 ];
 
-let catalog = JSON.parse(localStorage.getItem(STORAGE_CATALOG)) || DEFAULT_CATALOG.map((item) => Object.assign({}, item));
+function defaultCatalog() {
+  return DEFAULT_CATALOG.map((item) => Object.assign({}, item));
+}
+
+function defaultSettings() {
+  return {
+    hardSetTarget: WorkoutEngine.DEFAULT_HARD_SET_TARGET,
+    plateIncrement: WorkoutEngine.DEFAULT_PLATE
+  };
+}
+
+let catalog = defaultCatalog();
 let editingExerciseId = null;
-let settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS)) || {
-  hardSetTarget: WorkoutEngine.DEFAULT_HARD_SET_TARGET,
-  plateIncrement: WorkoutEngine.DEFAULT_PLATE
-};
+let settings = defaultSettings();
 let selectedDate = WorkoutEngine.localDateStr();
 let targetRIR = 0;
 let logsByDate = {};
@@ -108,6 +116,15 @@ function heatmapRange() {
   return { from: WorkoutEngine.localDateStr(from), to: WorkoutEngine.localDateStr(today) };
 }
 
+function clearLocalPrefix(prefix) {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.indexOf(prefix) === 0) keys.push(key);
+  }
+  keys.forEach((key) => localStorage.removeItem(key));
+}
+
 function loadLogsFromLocal() {
   logsByDate = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -134,6 +151,7 @@ function getLog(dateStr) {
       sets: (parsed.sets || []).slice()
     };
   }
+  if (!CommitFitApi.enabled()) return emptyLog();
   const raw = localStorage.getItem(`${STORAGE_PREFIX}${dateStr}`);
   if (!raw) return emptyLog();
   try {
@@ -151,10 +169,11 @@ function persistLogLocal(dateStr, log) {
   const empty = !log.sets.length && !log.flags.deload && !log.flags.highStress && !log.flags.poorSleep;
   if (empty) {
     delete logsByDate[dateStr];
-    localStorage.removeItem(`${STORAGE_PREFIX}${dateStr}`);
+    if (CommitFitApi.enabled()) localStorage.removeItem(`${STORAGE_PREFIX}${dateStr}`);
     return;
   }
   logsByDate[dateStr] = log;
+  if (!CommitFitApi.enabled()) return;
   localStorage.setItem(`${STORAGE_PREFIX}${dateStr}`, JSON.stringify(log));
 }
 
@@ -176,6 +195,7 @@ async function refreshLogsFromApi() {
   const range = heatmapRange();
   const data = await CommitFitApi.api(`/workouts?from=${range.from}&to=${range.to}`);
   logsByDate = {};
+  clearLocalPrefix(STORAGE_PREFIX);
   (data.items || []).forEach((item) => {
     logsByDate[item.date] = {
       flags: Object.assign(emptyLog().flags, item.flags || {}),
@@ -190,6 +210,7 @@ function findExercise(id) {
 }
 
 function persistCatalog() {
+  if (!CommitFitApi.enabled()) return;
   localStorage.setItem(STORAGE_CATALOG, JSON.stringify(catalog));
 }
 
@@ -585,8 +606,16 @@ function renderYearHeatmap() {
     const score = WorkoutEngine.scoreDay(dateStr, log, logs, settings.hardSetTarget);
     if (WorkoutEngine.hasWorkingSet(log)) loggedCount++;
 
+    let cellLevel = score.className;
+    if (CommitFitDemo.active()) {
+      const weekCol = Math.floor((i + startPad) / 7);
+      const row = (i + startPad) % 7;
+      const totalWeeks = Math.ceil((startPad + totalDays) / 7);
+      cellLevel = CommitFitDemo.cellClass(weekCol, row, totalWeeks);
+    }
+
     const cell = document.createElement("div");
-    cell.className = `day-cell ${score.className}`;
+    cell.className = `day-cell ${cellLevel}`;
     if (dateStr === selectedDate) cell.classList.add("active-selected");
 
     cell.addEventListener("mouseenter", (e) => {
@@ -619,7 +648,9 @@ function renderYearHeatmap() {
     heatmapGrid.appendChild(cell);
   }
 
-  totalDaysLogged.textContent = `${loggedCount} sessions this year`;
+  totalDaysLogged.textContent = CommitFitDemo.active()
+    ? "Sample progress"
+    : `${loggedCount} sessions this year`;
   const wrapper = document.querySelector(".heatmap-wrapper");
   if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
 }
@@ -832,7 +863,7 @@ toggleGoalsBtn.addEventListener("click", () => {
 saveGoalsBtn.addEventListener("click", async () => {
   settings.hardSetTarget = Number(inputHardGoal.value) || WorkoutEngine.DEFAULT_HARD_SET_TARGET;
   settings.plateIncrement = Number(inputPlate.value) || WorkoutEngine.DEFAULT_PLATE;
-  localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
+  if (CommitFitApi.enabled()) localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
   try {
     if (CommitFitApi.enabled()) {
       await CommitFitApi.api("/profile", {
@@ -881,13 +912,29 @@ addExerciseBtn.addEventListener("click", async () => {
 });
 
 async function boot() {
-  loadLogsFromLocal();
+  if (CommitFitDemo.active()) {
+    if (window.CommitFitApi && CommitFitApi.clearLocalAppData) CommitFitApi.clearLocalAppData();
+    catalog = defaultCatalog();
+    settings = defaultSettings();
+    logsByDate = { [WorkoutEngine.localDateStr()]: CommitFitDemo.workout() };
+  } else {
+    const storedCatalog = JSON.parse(localStorage.getItem(STORAGE_CATALOG) || "null");
+    if (Array.isArray(storedCatalog) && storedCatalog.length) catalog = storedCatalog;
+    const storedSettings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "null");
+    if (storedSettings) settings = storedSettings;
+    loadLogsFromLocal();
+  }
   if (CommitFitApi.enabled()) {
     let cloudProfile = null;
     try {
       cloudProfile = await CommitFitApi.api("/profile");
     } catch (err) {
-      if (!err || err.status !== 404) loadLogsFromLocal();
+      if (err && err.status === 404) {
+        settings = defaultSettings();
+        localStorage.removeItem(STORAGE_SETTINGS);
+      } else {
+        loadLogsFromLocal();
+      }
     }
     if (cloudProfile) {
       settings = {
@@ -904,6 +951,7 @@ async function boot() {
         persistCatalog();
       }
       await refreshLogsFromApi();
+      CommitFitApi.markLocalOwner();
     } catch (err) {
       loadLogsFromLocal();
     }
@@ -916,3 +964,4 @@ async function boot() {
 }
 
 boot();
+window.addEventListener("commitfit-auth", () => boot());
