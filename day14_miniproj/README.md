@@ -71,7 +71,7 @@ SK =
 ```bash
 # Sensitive variable (Gemini)
 export TF_VAR_gemini_api_key="..."
-# optional: TF_VAR_gemini_model="gemini-2.0-flash-lite"
+# optional: TF_VAR_gemini_model="gemini-3.5-flash-lite"
 
 cd day14_miniproj
 terraform init

@@ -1515,6 +1515,11 @@ body.estimate-open .estimate-panel {
 }
 
 .auth-copy,
+.auth-forgot-link {
+  margin: -4px 0 12px;
+  text-align: right;
+}
+
 .auth-hint,
 .auth-switch {
   font-size: 12px;

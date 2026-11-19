@@ -313,6 +313,9 @@
           <label for="auth-signin-password">Password</label>
           <input type="password" id="auth-signin-password" autocomplete="current-password" required>
         </div>
+        <p class="auth-switch auth-forgot-link">
+          <button type="button" class="btn-link" data-auth-view="forgot">Forgot password?</button>
+        </p>
         <button type="submit" class="btn btn-primary">Sign in</button>
         <p class="auth-switch">New here? <button type="button" class="btn-link" data-auth-view="signup">Create account</button></p>
       </form>
@@ -345,6 +348,41 @@
         <button type="submit" class="btn btn-primary">Confirm email</button>
         <p class="auth-switch">
           <button type="button" class="btn-link" id="auth-resend-btn">Resend code</button>
+          ·
+          <button type="button" class="btn-link" data-auth-view="signin">Back to sign in</button>
+        </p>
+      </form>
+      <form id="auth-forgot-form" hidden>
+        <div class="form-group">
+          <label for="auth-forgot-email">Email</label>
+          <input type="email" id="auth-forgot-email" autocomplete="email" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Send reset code</button>
+        <p class="auth-switch">
+          <button type="button" class="btn-link" data-auth-view="signin">Back to sign in</button>
+        </p>
+      </form>
+      <form id="auth-reset-form" hidden>
+        <div class="form-group">
+          <label for="auth-reset-email">Email</label>
+          <input type="email" id="auth-reset-email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-reset-code">Reset code</label>
+          <input type="text" id="auth-reset-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-reset-password">New password</label>
+          <input type="password" id="auth-reset-password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="form-group">
+          <label for="auth-reset-confirm">Confirm new password</label>
+          <input type="password" id="auth-reset-confirm" autocomplete="new-password" minlength="8" required>
+        </div>
+        <p class="auth-hint">At least 8 characters, including a letter and a number.</p>
+        <button type="submit" class="btn btn-primary">Update password</button>
+        <p class="auth-switch">
+          <button type="button" class="btn-link" id="auth-resend-reset-btn">Resend code</button>
           ·
           <button type="button" class="btn-link" data-auth-view="signin">Back to sign in</button>
         </p>

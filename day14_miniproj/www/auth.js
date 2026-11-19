@@ -11,6 +11,8 @@
   const signInForm = document.getElementById("auth-signin-form");
   const signUpForm = document.getElementById("auth-signup-form");
   const confirmForm = document.getElementById("auth-confirm-form");
+  const forgotForm = document.getElementById("auth-forgot-form");
+  const resetForm = document.getElementById("auth-reset-form");
 
   if (!overlay || typeof CommitFitApi === "undefined") return;
 
@@ -37,15 +39,26 @@
   function showView(next) {
     view = next;
     setError("");
-    signInForm.hidden = next !== "signin";
-    signUpForm.hidden = next !== "signup";
-    confirmForm.hidden = next !== "confirm";
+    if (signInForm) signInForm.hidden = next !== "signin";
+    if (signUpForm) signUpForm.hidden = next !== "signup";
+    if (confirmForm) confirmForm.hidden = next !== "confirm";
+    if (forgotForm) forgotForm.hidden = next !== "forgot";
+    if (resetForm) resetForm.hidden = next !== "reset";
+
     if (next === "signin") {
       titleEl.textContent = "Sign in";
       copyEl.textContent = "Sync meals and workouts across devices.";
     } else if (next === "signup") {
       titleEl.textContent = "Create account";
       copyEl.textContent = "Use the same email on phone and laptop.";
+    } else if (next === "forgot") {
+      titleEl.textContent = "Forgot password";
+      copyEl.textContent = "We will email a reset code to your verified address.";
+    } else if (next === "reset") {
+      titleEl.textContent = "Reset password";
+      copyEl.textContent = pendingEmail
+        ? `Enter the code sent to ${pendingEmail}, then choose a new password.`
+        : "Enter the email code and your new password.";
     } else {
       titleEl.textContent = "Confirm email";
       copyEl.textContent = pendingEmail
@@ -160,20 +173,108 @@
     }
   });
 
-  document.getElementById("auth-resend-btn").addEventListener("click", async () => {
-    const email = pendingEmail || document.getElementById("auth-signin-email").value.trim();
-    if (!email) {
-      setError("Enter your email first.");
-      return;
-    }
-    try {
-      await CommitFitApi.resendCode(email);
+  if (forgotForm) {
+    forgotForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const email = document.getElementById("auth-forgot-email").value.trim();
+      setBusy(forgotForm, true);
       setError("");
-      copyEl.textContent = `A new code was sent to ${email}.`;
-    } catch (err) {
-      setError(err.message || "Could not resend the code.");
-    }
-  });
+      try {
+        await CommitFitApi.forgotPassword(email);
+        pendingEmail = email;
+        const resetEmail = document.getElementById("auth-reset-email");
+        if (resetEmail) resetEmail.value = email;
+        showView("reset");
+      } catch (err) {
+        // Cognito prevent_user_existence_errors: still show success-style next step when possible
+        if (err && (err.code === "UserNotFoundException" || err.code === "InvalidParameterException")) {
+          pendingEmail = email;
+          const resetEmail = document.getElementById("auth-reset-email");
+          if (resetEmail) resetEmail.value = email;
+          showView("reset");
+          copyEl.textContent = pendingEmail
+            ? `If an account exists for ${pendingEmail}, a reset code was sent.`
+            : "If an account exists, a reset code was sent.";
+        } else {
+          setError(err.message || "Could not start password reset.");
+        }
+      } finally {
+        setBusy(forgotForm, false);
+      }
+    });
+  }
+
+  if (resetForm) {
+    resetForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const email =
+        document.getElementById("auth-reset-email").value.trim() || pendingEmail;
+      const code = document.getElementById("auth-reset-code").value.trim();
+      const password = document.getElementById("auth-reset-password").value;
+      const confirm = document.getElementById("auth-reset-confirm").value;
+      if (password !== confirm) {
+        setError("Passwords do not match.");
+        return;
+      }
+      setBusy(resetForm, true);
+      setError("");
+      try {
+        await CommitFitApi.confirmForgotPassword(email, code, password);
+        pendingEmail = email;
+        pendingPassword = "";
+        await CommitFitApi.signIn(email, password);
+        resetForm.reset();
+        if (forgotForm) forgotForm.reset();
+        closeOverlay();
+      } catch (err) {
+        setError(err.message || "Could not reset password.");
+      } finally {
+        setBusy(resetForm, false);
+      }
+    });
+  }
+
+  const resendBtn = document.getElementById("auth-resend-btn");
+  if (resendBtn) {
+    resendBtn.addEventListener("click", async () => {
+      const email = pendingEmail || document.getElementById("auth-signin-email").value.trim();
+      if (!email) {
+        setError("Enter your email first.");
+        return;
+      }
+      try {
+        await CommitFitApi.resendCode(email);
+        setError("");
+        copyEl.textContent = `A new code was sent to ${email}.`;
+      } catch (err) {
+        setError(err.message || "Could not resend the code.");
+      }
+    });
+  }
+
+  const resendResetBtn = document.getElementById("auth-resend-reset-btn");
+  if (resendResetBtn) {
+    resendResetBtn.addEventListener("click", async () => {
+      const email =
+        (document.getElementById("auth-reset-email") &&
+          document.getElementById("auth-reset-email").value.trim()) ||
+        pendingEmail ||
+        (document.getElementById("auth-forgot-email") &&
+          document.getElementById("auth-forgot-email").value.trim());
+      if (!email) {
+        setError("Enter your email first.");
+        return;
+      }
+      try {
+        await CommitFitApi.forgotPassword(email);
+        pendingEmail = email;
+        setError("");
+        copyEl.textContent = `A new reset code was sent to ${email}.`;
+      } catch (err) {
+        setError(err.message || "Could not resend the reset code.");
+      }
+    });
+  }
 
   signOutBtn.addEventListener("click", () => {
     CommitFitApi.signOut();

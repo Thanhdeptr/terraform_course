@@ -26,5 +26,5 @@ variable "gemini_api_key" {
 variable "gemini_model" {
   description = "Gemini model id for nutrition estimate (override if AI Studio shows a different free Lite id)"
   type        = string
-  default     = "gemini-2.0-flash-lite"
+  default     = "gemini-3.5-flash-lite"
 }

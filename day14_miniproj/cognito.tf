@@ -17,6 +17,13 @@ resource "aws_cognito_user_pool" "commitfit" {
     email_subject        = "Mã xác thực tài khoản CommitFit"
     email_message        = "Mã xác thực của bạn là: {####}"
   }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
 }
 
 resource "aws_cognito_user_pool_client" "commitfit_web" {

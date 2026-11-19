@@ -250,6 +250,26 @@ const CommitFitApi = (function () {
     return currentUser();
   }
 
+  async function forgotPassword(email) {
+    const cfg = cognitoConfig();
+    const username = String(email || "").trim().toLowerCase();
+    return cognito("ForgotPassword", {
+      ClientId: cfg.clientId,
+      Username: username
+    });
+  }
+
+  async function confirmForgotPassword(email, code, newPassword) {
+    const cfg = cognitoConfig();
+    const username = String(email || "").trim().toLowerCase();
+    return cognito("ConfirmForgotPassword", {
+      ClientId: cfg.clientId,
+      Username: username,
+      ConfirmationCode: String(code || "").trim(),
+      Password: newPassword
+    });
+  }
+
   function signOut() {
     clearTokens();
     clearLocalAppData();
@@ -416,6 +436,8 @@ const CommitFitApi = (function () {
     signUp,
     confirmSignUp,
     resendCode,
+    forgotPassword,
+    confirmForgotPassword,
     signOut,
     markLocalOwner,
     clearLocalAppData
